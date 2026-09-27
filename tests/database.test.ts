@@ -35,12 +35,20 @@ test('PostgreSQL: migración, RLS, restricciones y limpieza de fotografías', as
     `);
     const count = async (table: string) => (await db.query<{ count: number }>(`select count(*)::int as count from ${table}`)).rows[0].count;
     await db.exec('set role anon');
+    assert.equal(await count('public.catalog_section_settings'), 1);
+    for (const sql of ["insert into public.catalog_section_settings(id) values ('catalog')", "update public.catalog_section_settings set title='No'", "delete from public.catalog_section_settings"]) await assert.rejects(db.exec(sql), /permission denied/);
+
     assert.equal(await count('public.categories'), 1);
     assert.equal(await count('public.products'), 2);
     await assert.rejects(db.exec("select * from public.admin_users"), /permission denied/);
     for (const sql of ["insert into public.categories(name,slug) values ('No','no')", `update public.products set active=false where id='${product}'`, `delete from public.products where id='${product}'`]) await assert.rejects(db.exec(sql), /permission denied/);
     await db.exec(`reset role; set role authenticated; select set_config('request.jwt.claim.sub','${customer}',false)`);
     assert.equal(await count('public.admin_users'), 0);
+    assert.equal(await count('public.catalog_section_settings'), 1);
+    assert.equal((await db.query("update public.catalog_section_settings set title='No' returning id")).rows.length, 0);
+    await assert.rejects(db.exec("insert into public.catalog_section_settings(id) values ('catalog')"), /row-level security/);
+    await assert.rejects(db.exec("delete from public.catalog_section_settings"), /permission denied/);
+
     assert.equal(await count('public.products'), 2);
     await assert.rejects(db.exec(`insert into public.admin_users(user_id) values ('${customer}')`), /permission denied/);
     await assert.rejects(db.exec("insert into public.categories(name,slug) values ('No','no')"), /row-level security/);
@@ -48,6 +56,16 @@ test('PostgreSQL: migración, RLS, restricciones y limpieza de fotografías', as
     await assert.rejects(db.exec(`insert into storage.objects(bucket_id,name) values ('product-images','${imagePath}')`), /row-level security/);
     await db.exec(`select set_config('request.jwt.claim.sub','${admin}',false)`);
     assert.equal(await count('public.admin_users'), 1);
+    assert.equal((await db.query("update public.catalog_section_settings set title='Título editado', show_category_buttons=false returning id")).rows.length, 1);
+    await assert.rejects(db.exec("update public.catalog_section_settings set title='   '"), /check constraint/);
+    await assert.rejects(db.exec("update public.catalog_section_settings set title=repeat('x',121)"), /check constraint/);
+    await assert.rejects(db.exec("update public.catalog_section_settings set id='other'"), /check constraint/);
+    await assert.rejects(db.exec("delete from public.catalog_section_settings"), /permission denied/);
+    await db.exec('reset role; set role anon');
+    assert.equal((await db.query<{ title: string }>('select title from public.catalog_section_settings')).rows[0].title, 'Título editado');
+    await db.exec(`reset role; delete from public.catalog_section_settings; set role authenticated; select set_config('request.jwt.claim.sub','${admin}',false)`);
+    await db.exec("insert into public.catalog_section_settings(id) values ('catalog')");
+
     assert.equal(await count('public.products'), 3);
     await db.exec("insert into public.categories(name,slug) values ('Nueva','nueva')");
     await assert.rejects(db.exec("insert into public.categories(name,slug) values ('Duplicada','nueva')"), /unique constraint/);

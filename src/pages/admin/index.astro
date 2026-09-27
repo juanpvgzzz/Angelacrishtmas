@@ -1,4 +1,5 @@
 ---
+import CatalogContent from '../../components/admin/CatalogContent.astro';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import Icon from '../../components/common/Icon.astro';
 import { sections } from '../../config/sections';
@@ -11,6 +12,7 @@ import { sections } from '../../config/sections';
     <nav aria-label="Navegación del panel">
       <a href="#products-title" aria-current="location"><Icon name="heart" size={20} /> Productos</a>
       <a href="#categories-title"><Icon name="menu" size={20} /> Categorías</a>
+      <a href="#catalog-content-title"><Icon name="menu" size={20} /> Contenido del catálogo</a>
       <a href="#maintenance"><Icon name="check" size={20} /> Mantenimiento</a>
     </nav>
     <div class="sidebar-note"><Icon name="needle" size={26} /><strong>Hecho con calma.<br />Compartido con amor.</strong><p>Cada creación tiene una historia. Dale su lugar en tu catálogo.</p></div>
@@ -22,6 +24,7 @@ import { sections } from '../../config/sections';
       <header class="admin-heading"><div><p class="eyebrow">HECHO A MANO, ORGANIZADO CON CARIÑO</p><h1>Tu catálogo, a tu manera.</h1><p>Un espacio para cuidar y compartir tus creaciones.</p></div><button type="button" id="logout" class="button button-outline" hidden>Cerrar sesión</button></header>
       <div class="admin-feedback"><p id="admin-status" role="status" aria-live="polite">Comprobando acceso…</p><button type="button" id="retry-load" class="text-button" hidden>Volver a intentar</button></div>
       <div id="admin-panel" hidden>
+        <CatalogContent />
         <section aria-label="Resumen del catálogo" id="admin-summary" class="admin-summary"></section>
         <section class="admin-section" aria-labelledby="products-title">
           <div class="section-toolbar"><div><h2 id="products-title" tabindex="-1">Productos</h2><p>Administra las piezas que dan vida a tu tienda.</p></div><button class="button button-primary" id="new-product" type="button"><span aria-hidden="true">＋</span> Crear producto</button></div>

@@ -1,3 +1,4 @@
+import { initCatalogContent } from './admin-catalog-content';
 import { prepareImage } from '../utils/admin-image';
 import { getSupabase } from '../services/supabase/client';
 import { readAll } from '../services/supabase/read-all';
@@ -302,4 +303,5 @@ async function init() {
   } catch { message('No pudimos cargar tu catálogo. Revisa tu conexión y vuelve a intentar. Si continúa, contacta a quien administra tu sitio.'); $('#retry-load').hidden = false; }
 }
 $('#retry-load').addEventListener('click', () => { void init(); });
+initCatalogContent();
 void init();

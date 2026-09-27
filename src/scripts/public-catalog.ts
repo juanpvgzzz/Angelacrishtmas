@@ -1,3 +1,5 @@
+import { catalogDefaults, type CatalogSettings } from '../config/catalog-settings';
+import { publicCatalogSettings } from '../services/supabase/catalog-settings';
 import { setSearchCatalog, setSearchUnavailable } from './predictive-search';
 import { transitionContent } from './motion';
 import { mountCatalog, matchesGroup } from './catalog-filters';
@@ -62,11 +64,29 @@ function renderProduct(root: HTMLElement, products: Product[], categories: Categ
     root.querySelectorAll('[data-image]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
   }));
 }
+let loading = false;
+let loadVersion = 0;
 async function load() {
+  if (loading) return;
   const roots = document.querySelectorAll<HTMLElement>('[data-live-catalog], [data-live-product], [data-live-collections]');
   if (!roots.length && !document.querySelector('[data-footer-collections]')) return;
+  loading = true;
+  const version = ++loadVersion;
   try {
+    let settings: CatalogSettings = catalogDefaults;
+    let refreshSettings: (() => void) | undefined;
+    void publicCatalogSettings().then(value => {
+      if (version !== loadVersion) return;
+      settings = value; refreshSettings?.();
+    });
     const { categories, products } = await publicCatalog();
+    const applySettings = () => {
+    for (const [selector, value] of [['[data-catalog-eyebrow]', settings.eyebrow], ['#catalog-title', settings.title], ['[data-catalog-description]', settings.description]]) {
+      const element = document.querySelector(selector);
+      if (element) element.textContent = value;
+    }
+    };
+    applySettings();
     catalogCategories = categories;
     setSearchCatalog(products, categories);
     renderEditorial(categories, products);
@@ -76,7 +96,7 @@ async function load() {
         root.innerHTML = categories.length ? `<div class="collection-grid">${categories.map(category => `<a class="collection-card" href="${categoryUrl(category)}"><div class="collection-image">${photo(category.image, category.name)}${category.image.kind === 'placeholder' ? '<span class="image-caption">Ilustración de muestra</span>' : ''}</div><div class="collection-copy"><h3>${e(category.name)}</h3><p>${e(category.description)}</p><span class="text-link">Explorar colección <span aria-hidden="true">↗</span></span></div></a>`).join('')}</div>` : '<div class="empty-state"><p>Estamos preparando nuestras colecciones. Vuelve pronto para descubrirlas.</p></div>';
         return;
       }
-      if (root.dataset.featured !== 'true') { mountCatalog(root, products, categories, grid); return; }
+      if (root.dataset.featured !== 'true') { mountCatalog(root, products, categories, grid, settings); return; }
       const slug = new URLSearchParams(location.search).get('categoria') || root.dataset.category;
       const section = root.dataset.section;
       const scopedCategories = categories.filter(item => !section || item.section === section);
@@ -86,6 +106,12 @@ async function load() {
       const tabs = `<nav class="category-tabs" aria-label="Filtrar catálogo por categoría"><a href="${section ? sectionUrl(section) : '/catalogo/'}" ${!slug ? 'aria-current="page"' : ''}>Ver todo</a>${scopedCategories.map(item => `<a href="${categoryUrl(item)}" ${item.slug === slug ? 'aria-current="page"' : ''}>${e(item.name)}</a>`).join('')}</nav>`;
       root.innerHTML = `${root.dataset.featured === 'true' ? '' : tabs}${grid(root.dataset.featured === 'true' ? selected.filter(item => item.featured).slice(0, 4) : selected)}`;
     });
+    refreshSettings = () => {
+      applySettings();
+      roots.forEach(root => {
+        if (root.hasAttribute('data-live-catalog') && root.dataset.featured !== 'true') mountCatalog(root, products, categories, grid, settings);
+      });
+    };
     window.dispatchEvent(new Event('catalog:rendered'));
   } catch {
     setSearchUnavailable();
@@ -93,9 +119,10 @@ async function load() {
       root.innerHTML = `${root.hasAttribute('data-live-product') ? '<h1>Detalle del producto</h1>' : ''}<div class="empty-state"><p role="alert">No pudimos cargar el catálogo. Intenta nuevamente en unos momentos.</p><button type="button" class="button button-outline">Volver a intentar</button></div>`;
       root.querySelector('button')!.addEventListener('click', () => { void load(); });
     });
-  }
+  } finally { loading = false; }
 }
 void load();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void load(); });
 window.addEventListener('pageshow', event => { if (event.persisted) void load(); });
 
 // Las fotografías de portada y la colección de temporada siguen los destacados

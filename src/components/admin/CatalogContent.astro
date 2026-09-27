@@ -1,0 +1,16 @@
+---
+import { catalogTextFields, catalogToggleFields } from '../../config/catalog-settings';
+---
+<section class="admin-section" aria-labelledby="catalog-content-title">
+  <div class="section-toolbar"><div><h2 id="catalog-content-title" tabindex="-1">Contenido del catálogo</h2><p>Edita los textos y controles de «Encuentra tu detalle». Las categorías se administran en Categorías.</p></div><button type="button" id="open-catalog-content" class="button button-outline">Editar textos y filtros</button></div>
+  <form id="catalog-content-form" hidden>
+    <fieldset id="catalog-content-fields" disabled>
+      {[{ title: 'Encabezado', fields: catalogTextFields.slice(0, 3) }, { title: 'Etiquetas', fields: catalogTextFields.slice(3) }].map(group => <fieldset class="content-field-group"><legend>{group.title}</legend><div class="content-fields">{group.fields.map(field => <label>{field.label}{field.key === 'description' ? <textarea name={field.key} required maxlength={field.max} rows="3" /> : <input name={field.key} required maxlength={field.max} />}<small>Máximo {field.max} caracteres.</small></label>)}</div></fieldset>)}
+      <fieldset class="content-field-group"><legend>Controles visibles</legend>{catalogToggleFields.map(field => <label class="check-label"><input type="checkbox" name={field.key} />{field.label}</label>)}<p>Si ambos controles de categoría están activos, se muestran botones en escritorio y el selector en celular.</p></fieldset>
+      <aside class="content-preview" aria-label="Vista previa del encabezado"><p class="eyebrow" data-preview="eyebrow"></p><h3 data-preview="title"></h3><p data-preview="description"></p></aside>
+      <div class="admin-actions"><button type="submit" class="button button-primary" id="save-catalog-content">Guardar cambios</button><button type="button" class="button button-outline" id="cancel-catalog-content">Cancelar cambios</button></div>
+    </fieldset>
+    <p id="catalog-content-status" role="status" aria-live="polite"></p>
+    <button type="button" class="text-button" id="retry-catalog-content" hidden>Volver a cargar configuración</button>
+  </form>
+</section>

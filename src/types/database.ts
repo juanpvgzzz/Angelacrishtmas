@@ -1,3 +1,4 @@
+import type { CatalogSettings, CatalogSettingsRow } from '../config/catalog-settings';
 export type Json =
   | string
   | number
@@ -14,6 +15,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalog_section_settings: {
+        Row: CatalogSettingsRow
+        Insert: Partial<CatalogSettings> & { id?: 'catalog'; created_at?: string; updated_at?: string }
+        Update: Partial<CatalogSettings>
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string

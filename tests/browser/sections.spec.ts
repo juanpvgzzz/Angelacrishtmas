@@ -20,14 +20,16 @@ test('secciones independientes, enlaces de categoria y ficha', async ({ page }) 
     }
     await page.screenshot({ path: `test-results/sections-dolls-${width}.png`, fullPage: true });
   }
-  await page.getByLabel('Categoría del catálogo', { exact: true }).selectOption(state.categories[0].slug);
+  await page.setViewportSize({ width: 390, height: 850 });
+  await page.getByLabel('Categoría', { exact: true }).selectOption(state.categories[0].slug);
   await expect(page).toHaveURL(/munecas-de-trapo\/\?categoria=/);
   await page.locator('.product-detail-link').first().click();
   await expect(page.locator('[data-live-product] .breadcrumbs').getByRole('link', { name: 'Muñecas de trapo', exact: true })).toHaveAttribute('href', '/munecas-de-trapo/');
   await page.goto('/navidad/');
   await expect(page.locator('.product-card')).toHaveCount(state.products.length - dolls.length);
   await page.goto('/navidad/?categoria=' + state.categories[0].slug);
-  await expect(page.locator('.product-card')).toHaveCount(0);
+  await expect(page.locator('.product-card')).toHaveCount(state.products.length - dolls.length);
+  await expect(page).not.toHaveURL(/categoria=/);
   await page.goto('/catalogo/');
   await expect(page.locator('.product-card')).toHaveCount(state.products.length);
 });

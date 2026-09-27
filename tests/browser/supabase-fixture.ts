@@ -1,9 +1,11 @@
+import { catalogDefaults } from '../../src/config/catalog-settings';
 import type { Page } from '@playwright/test';
 import { categories as demoCategories } from '../../src/data/categories';
 import { products as demoProducts } from '../../src/data/products';
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 export async function mockSupabase(page: Page, admin = true) {
   const state = {
+    catalog_section_settings: [{ ...catalogDefaults, id: 'catalog', created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-01T00:00:00Z' }],
     categories: demoCategories.map((c, i) => ({ id: id(i + 1), section: 'navidad', name: c.name, slug: c.slug, description: c.description, image_path: c.image.src, active: c.active, sort_order: c.order, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-01T00:00:00Z' })),
     products: demoProducts.map((p, i) => ({ id: id(i + 101), category_id: id(demoCategories.findIndex(c => c.id === p.categoryId) + 1), name: p.name, slug: p.slug, short_description: p.shortDescription, description: p.description, price: p.basePrice, price_from: p.priceFrom, currency: 'COP', availability: p.availability === 'under-order' ? 'made_to_order' : p.availability === 'unavailable' ? 'sold_out' : 'available', production_time: p.productionTime, customizable: true, customization_options: p.customizationOptions, active: p.active, featured: p.featured, sort_order: p.order, images: p.images.map(({ src, ...image }) => ({ ...image, path: src })), created_at: p.createdAt, updated_at: p.createdAt })),
     image_cleanup: [] as { path: string; created_at: string }[], uploads: [] as string[], removed: [] as string[], failSave: false,
@@ -24,21 +26,25 @@ export async function mockSupabase(page: Page, admin = true) {
     }
     const table = url.pathname.split('/rest/v1/')[1];
     if (table === 'admin_users') return reply(admin ? { user_id: user.id } : null);
-    if (!['categories', 'products', 'image_cleanup'].includes(table)) return reply({ message: 'Unexpected fixture request' }, 400);
+    if (!['categories', 'products', 'image_cleanup', 'catalog_section_settings'].includes(table)) return reply({ message: 'Unexpected fixture request' }, 400);
     // Mutable fixtures verify UI behavior only, not database security.
-    const rows = state[table as 'categories' | 'products' | 'image_cleanup'] as unknown as Record<string, unknown>[];
+    const rows = state[table as 'categories' | 'products' | 'image_cleanup' | 'catalog_section_settings'] as unknown as Record<string, unknown>[];
     const matches = (row: Record<string, unknown>) => [...url.searchParams.entries()].every(([key, value]) => !value.startsWith('eq.') || String(row[key]) === value.slice(3));
-    if (method === 'GET') return reply(rows.filter(matches));
+    if (method === 'GET') {
+      const selected = rows.filter(matches);
+      return reply(table === 'catalog_section_settings' ? selected[0] ?? null : selected);
+    }
+    if (state.failSave && table === 'catalog_section_settings') return reply({ code: '42501' }, 403);
     if (state.failSave && table === 'products') return reply({ code: '23505', message: 'Duplicate slug' }, 409);
     if (method === 'POST') {
       const data = request.postDataJSON(); const newRows = (Array.isArray(data) ? data : [data]).map(row => ({ created_at: new Date().toISOString(), updated_at: new Date().toISOString(), ...row }));
       if (newRows.some(row => row.slug && rows.some(existing => existing.slug === row.slug))) return reply({ code: '23505' }, 409);
-      rows.push(...newRows); return reply(newRows, 201);
+      rows.push(...newRows); return reply(table === 'catalog_section_settings' ? newRows[0] : newRows, 201);
     }
     const selected = rows.filter(matches);
     if (method === 'PATCH') selected.forEach(row => Object.assign(row, request.postDataJSON(), { updated_at: new Date().toISOString() }));
     if (method === 'DELETE') selected.forEach(row => rows.splice(rows.indexOf(row), 1));
-    return reply(selected);
+    return reply(table === 'catalog_section_settings' ? selected[0] ?? null : selected);
   });
   return state;
 }

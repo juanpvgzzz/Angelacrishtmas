@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { mockSupabase } from './supabase-fixture';
 
 test('entradas reales, reveal una vez, hover y header compacto', async ({ page }) => {
@@ -52,7 +52,7 @@ test('movimiento reducido conserva contenido, filtros y galería sin animaciones
   await expect(page.locator('.product-card')).toHaveCount(6);
   expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   await expect(page.locator('.motion-pending')).toHaveCount(0);
-  await page.getByRole('button', { name:'Flores eternas', exact:true }).click();
+  await page.getByRole('button', { name:'Decoración para el hogar', exact:true }).click();
   await expect(page.locator('[data-results]')).toContainText('No encontramos');
   await page.getByRole('button', { name:'Todo', exact:true }).click();
   await page.locator('.product-detail-link').first().click();
@@ -65,7 +65,7 @@ test('cambiar preferencia durante una transición no deja contenido invisible', 
   await mockSupabase(page);
   await page.goto('/');
   await expect(page.locator('.product-card')).toHaveCount(6);
-  await page.getByRole('button', { name:'Decoración', exact:true }).click();
+  await page.getByRole('button', { name:'Decoración para el hogar', exact:true }).click();
   await page.emulateMedia({ reducedMotion:'reduce' });
   await expect(page.locator('[data-results]')).not.toHaveAttribute('inert','');
   await expect(page.locator('.motion-pending')).toHaveCount(0);

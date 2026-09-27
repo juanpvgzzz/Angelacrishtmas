@@ -140,3 +140,14 @@
   }
   @media (prefers-reduced-motion:reduce) { .banner-track { scroll-behavior:auto; } }
 }
+
+@layer responsive {
+  .catalog-tools [hidden] { display: none; }
+  .catalog-groups button, .shop-heading { overflow-wrap: anywhere; }
+  @media (max-width: 767px) {
+    .adaptive-category-controls .catalog-groups { display: none; }
+  }
+  @media (min-width: 768px) {
+    .adaptive-category-controls .category-select { display: none; }
+  }
+}

@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { mockSupabase } from './supabase-fixture';
 
 for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
@@ -31,10 +31,12 @@ for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
   await search.fill('zzzzsinresultado');
   await expect(page.getByRole('heading',{name:'No encontramos creaciones en esta selección'})).toBeVisible();
   await page.getByRole('button',{name:'Ver todo',exact:true}).click();
-  await page.getByRole('button',{name:'Flores eternas',exact:true}).click();
+  if (width < 768) await page.getByLabel('Categoría', { exact: true }).selectOption(state.categories[0].slug);
+  else await page.getByRole('button',{name:'Flores eternas',exact:true}).click();
   await expect(page.locator('.product-card').first()).toContainText('Ramo de rosas');
-  await expect(page.getByRole('button',{name:'Flores eternas',exact:true})).toHaveAttribute('aria-pressed','true');
-  await page.getByRole('button',{name:'Todo',exact:true}).click();
+  await expect(page.locator(`[data-group="${state.categories[0].slug}"]`)).toHaveAttribute('aria-pressed','true');
+  if (width < 768) await page.getByLabel('Categoría', { exact: true }).selectOption('');
+  else await page.getByRole('button',{name:'Todo',exact:true}).click();
   await expect(page.locator('.product-card')).toHaveCount(6);
   await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
   await page.screenshot({path:`test-results/storefront-${width}.png`,fullPage:true});
