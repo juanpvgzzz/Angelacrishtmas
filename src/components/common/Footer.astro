@@ -1,0 +1,21 @@
+---
+import Brand from './Brand.astro';
+import WhatsAppButton from './WhatsAppButton.astro';
+import { brand } from '../../config/brand';
+import { getWhatsAppUrl } from '../../config/whatsapp';
+const isAdmin = Astro.url.pathname.startsWith('/admin');
+---
+<footer class="site-footer" id="contacto" tabindex="-1">
+  <div class="container footer-grid">
+    <div><Brand footer /><p>Detalles hechos con las manos.<br />Recuerdos hechos con el corazón.</p></div>
+    <nav aria-label="Navegación del pie"><h2>Explora ÁMELA</h2><a href="/">Inicio</a><a href="/catalogo/">Catálogo</a><a href="/catalogo/?grupo=personalizados">Personalizados</a><a href="/#como-comprar">Cómo comprar</a></nav>
+    <nav aria-label="Colecciones del pie"><h2>Colecciones</h2><div data-footer-collections><a href="/catalogo/">Ver todas las creaciones</a></div></nav>
+    <div><h2>Conversemos</h2>{getWhatsAppUrl() ? <WhatsAppButton label="Escríbenos por WhatsApp" variant="outline" /> : <p>El contacto por WhatsApp estará disponible próximamente.</p>}{brand.socialLinks.map(social => <a class="social-link" href={social.url} target="_blank" rel="noopener noreferrer">{social.label}</a>)}</div>
+  </div>
+  <div class="container footer-bottom"><span>© <span data-current-year>{new Date().getFullYear()}</span> ÁMELA · Piezas hechas a mano, con variaciones que las hacen únicas.</span><a href="/admin/">Administración</a></div>
+</footer>
+{!isAdmin && <div class="mobile-quote"><WhatsAppButton label="Cotizar por WhatsApp" /></div>}
+<script>
+ import '../../scripts/public-catalog';
+ document.querySelectorAll('[data-current-year]').forEach(node => { node.textContent = String(new Date().getFullYear()); });
+</script>

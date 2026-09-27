@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+!.env.example
+.firebase/
+firebase-debug.log*
+*.local
+test-results/
+.DS_Store
+Thumbs.db
+supabase/.temp/
+supabase/.branches/

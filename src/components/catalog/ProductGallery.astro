@@ -1,0 +1,23 @@
+---
+import type { CatalogImage } from '../../types/catalog';
+interface Props { images: CatalogImage[]; name: string; }
+const { images, name } = Astro.props;
+const first = images[0];
+---
+<div class="product-gallery">
+  <div class="gallery-main"><img id="main-product-image" class:list={{ 'placeholder-image': !first || first.kind === 'placeholder' }} src={first?.src || '/images/placeholders/star.svg'} alt={first?.alt || name} width={first?.width || 600} height={first?.height || 720} fetchpriority="high" /><span class="image-caption" data-gallery-caption hidden={first?.kind === 'photo'}>Imagen de muestra</span></div>
+  {images.length > 1 && <div class="gallery-thumbnails" role="group" aria-label="Imágenes del producto">{images.map((image, index) => <button type="button" data-gallery-src={image.src} data-gallery-alt={image.alt} data-gallery-kind={image.kind} aria-label={`Ver imagen ${index + 1} de ${name}`} aria-pressed={index === 0 ? 'true' : 'false'}><img src={image.src} alt="" width="72" height="86" loading="lazy" /></button>)}</div>}
+</div>
+<script>
+  const mainImage = document.querySelector<HTMLImageElement>('#main-product-image');
+  const thumbnails = document.querySelectorAll<HTMLButtonElement>('[data-gallery-src]');
+  thumbnails.forEach((button) => button.addEventListener('click', () => {
+    if (!mainImage || !button.dataset.gallerySrc) return;
+    mainImage.src = button.dataset.gallerySrc;
+    mainImage.alt = button.dataset.galleryAlt || '';
+    mainImage.classList.toggle('placeholder-image', button.dataset.galleryKind === 'placeholder');
+    const caption = document.querySelector<HTMLElement>('[data-gallery-caption]');
+    if (caption) caption.hidden = button.dataset.galleryKind !== 'placeholder';
+    thumbnails.forEach((thumbnail) => thumbnail.setAttribute('aria-pressed', String(thumbnail === button)));
+  }));
+</script>

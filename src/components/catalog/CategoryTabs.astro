@@ -1,0 +1,9 @@
+---
+import type { Category } from '../../types/catalog';
+interface Props { categories: Category[]; activeSlug?: string; }
+const { categories, activeSlug } = Astro.props;
+---
+<nav class="category-tabs" aria-label="Filtrar catálogo por categoría">
+  <a href="/catalogo/" aria-current={!activeSlug ? 'page' : undefined}>Ver todo</a>
+  {categories.map((category) => <a href={`/catalogo/?categoria=${encodeURIComponent(category.slug)}`} aria-current={activeSlug === category.slug ? 'page' : undefined}>{category.name}</a>)}
+</nav>

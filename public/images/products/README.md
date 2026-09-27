@@ -1,0 +1,1 @@
+Espacio reservado para fotografías reales autorizadas de las creaciones de ÁMELA. Las imágenes actuales son ilustraciones vectoriales de demostración en `../placeholders/`. No representan fotografías de sus productos reales.

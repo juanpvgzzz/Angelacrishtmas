@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Producto">
+  <div class="container product-page" data-live-product>
+    <h1>Detalle del producto</h1><p role="status" aria-live="polite">Cargando producto…</p>
+    <noscript>Activa JavaScript para consultar la disponibilidad de este producto.</noscript>
+  </div>
+</BaseLayout>
+<script>import '../../scripts/public-catalog';</script>

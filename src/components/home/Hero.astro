@@ -1,0 +1,23 @@
+---
+import Icon from '../common/Icon.astro';
+import WhatsAppButton from '../common/WhatsAppButton.astro';
+---
+<section class="hero container" aria-labelledby="hero-title">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="small-line" aria-hidden="true"></span> EL ARTE DE REGALAR CON AMOR</p>
+    <h1 id="hero-title">Detalles hechos a mano para momentos que <em>merecen durar</em></h1>
+    <p class="hero-description">Flores eternas, muñecas, decoración y regalos personalizados creados con dedicación en cada detalle.</p>
+    <div class="hero-collections"><a href="#colecciones" class="button button-primary">Explorar colecciones <Icon name="arrow" /></a><WhatsAppButton label="Crear algo especial" variant="outline" /></div>
+    <p class="hero-signature"><Icon name="needle" size={22} /><span>Hecho a mano. Pensado para ti.</span></p>
+  </div>
+  <div class="hero-art" data-hero-art>
+    <div class="brand-editorial">
+      <span class="editorial-kicker">CREACIONES HECHAS CON CARIÑO.</span>
+      <svg class="petal-mark" width="64" height="76" viewBox="0 0 64 76" fill="none" aria-hidden="true"><path d="M32 68V38M32 44C6 42 6 18 12 9c18 1 27 19 20 35Zm0-7C27 19 40 6 55 6c3 18-7 30-23 31Z" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="editorial-brand">ÁMELA</span>
+      <span class="editorial-descriptor">Handmade with Love</span>
+      <p>Pequeños detalles.<br />Mucho cariño.</p>
+    </div>
+  </div>
+</section>
+<div class="values-strip"><div class="container"><span><Icon name="needle" /> Elaborado a mano</span><span><Icon name="heart" /> Personalizado para ti</span><span><Icon name="heart" /> Para momentos especiales</span></div></div>

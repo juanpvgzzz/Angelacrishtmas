@@ -1,0 +1,46 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Icon from '../../components/common/Icon.astro';
+import { sections } from '../../config/sections';
+---
+<AdminLayout title="Administración">
+<div class="admin-shell" id="admin-root">
+  <aside class="admin-sidebar" aria-label="Administración">
+    <a class="admin-brand" href="/admin/">ÁMELA<span>MI TALLER · ADMINISTRACIÓN</span></a>
+    <p class="nav-caption">TU ESPACIO DE TRABAJO</p>
+    <nav aria-label="Navegación del panel">
+      <a href="#products-title" aria-current="location"><Icon name="heart" size={20} /> Productos</a>
+      <a href="#categories-title"><Icon name="menu" size={20} /> Categorías</a>
+      <a href="#maintenance"><Icon name="check" size={20} /> Mantenimiento</a>
+    </nav>
+    <div class="sidebar-note"><Icon name="needle" size={26} /><strong>Hecho con calma.<br />Compartido con amor.</strong><p>Cada creación tiene una historia. Dale su lugar en tu catálogo.</p></div>
+    <a class="text-link" href="/catalogo/" target="_blank" rel="noopener">Ver catálogo <Icon name="arrow" size={17} /></a>
+  </aside>
+  <main id="contenido" class="admin-workspace" tabindex="-1">
+    <header class="admin-topbar"><span>Mi taller <span aria-hidden="true">/</span> Catálogo</span><span class="admin-account"><Icon name="lock" size={16} /> Espacio privado</span></header>
+    <div class="admin-content">
+      <header class="admin-heading"><div><p class="eyebrow">HECHO A MANO, ORGANIZADO CON CARIÑO</p><h1>Tu catálogo, a tu manera.</h1><p>Un espacio para cuidar y compartir tus creaciones.</p></div><button type="button" id="logout" class="button button-outline" hidden>Cerrar sesión</button></header>
+      <div class="admin-feedback"><p id="admin-status" role="status" aria-live="polite">Comprobando acceso…</p><button type="button" id="retry-load" class="text-button" hidden>Volver a intentar</button></div>
+      <div id="admin-panel" hidden>
+        <section aria-label="Resumen del catálogo" id="admin-summary" class="admin-summary"></section>
+        <section class="admin-section" aria-labelledby="products-title">
+          <div class="section-toolbar"><div><h2 id="products-title" tabindex="-1">Productos</h2><p>Administra las piezas que dan vida a tu tienda.</p></div><button class="button button-primary" id="new-product" type="button"><span aria-hidden="true">＋</span> Crear producto</button></div>
+          <div class="admin-filters">
+            <label class="admin-search">Buscar productos<div><Icon name="search" size={19} /><input type="search" id="admin-search" placeholder="Busca por nombre o descripción…" /></div></label>
+            <div class="filter-field"><label for="admin-section">Sección del catálogo</label><select id="admin-section"><option value="">Todas las secciones</option>{sections.map(section => <option value={section.id}>{section.name}</option>)}</select></div>
+            <div class="filter-field"><label for="admin-visibility">Estado</label><select id="admin-visibility"><option value="">Todos los estados</option><option value="active">Activos</option><option value="hidden">Ocultos</option><option value="sold_out">Agotados</option><option value="featured">Destacados</option></select></div>
+          </div>
+          <div class="list-caption"><p id="product-count" role="status" aria-live="polite"></p><button id="reset-filters" class="text-button" type="button">Limpiar filtros</button></div>
+          <div id="product-list" class="admin-list"></div>
+          <nav class="admin-pagination" aria-label="Páginas de productos"><button class="button button-outline" id="previous-page" type="button">Anterior</button><span id="page-info"></span><button class="button button-outline" id="next-page" type="button">Siguiente</button></nav>
+        </section>
+        <section class="admin-section" aria-labelledby="categories-title"><div class="section-toolbar"><div><h2 id="categories-title" tabindex="-1">Categorías</h2><p>Agrupa tus creaciones para que sea fácil encontrarlas.</p></div><button class="button button-outline" id="new-category" type="button">Crear categoría</button></div><div id="category-list" class="admin-list category-grid"></div></section>
+        <details id="maintenance" class="admin-maintenance"><summary>Mantenimiento de fotografías</summary><p>Libera espacio eliminando cargas interrumpidas de hace más de una hora. Las fotografías que usa el catálogo se conservan.</p><button class="button button-outline" id="cleanup" type="button">Limpiar fotografías sin uso</button></details>
+        <footer class="admin-footer"><span>ÁMELA · Tu taller digital</span><span>Los productos nuevos se guardan ocultos hasta que decidas mostrarlos.</span></footer>
+      </div>
+    </div>
+  </main>
+</div>
+<dialog id="editor" aria-labelledby="editor-title"><form id="catalog-form"><header class="editor-heading"><p class="eyebrow">CUIDA CADA DETALLE</p><h2 id="editor-title"></h2><p>Completa la información y revisa las fotografías antes de guardar.</p></header><fieldset id="editor-fields"></fieldset><p id="editor-status" role="status" aria-live="polite"></p><progress id="upload-progress" max="100" value="0" aria-label="Progreso de las fotografías" hidden></progress><div class="admin-actions editor-footer"><button class="button button-outline" id="cancel-edit" type="button">Cancelar</button><button class="button button-primary" type="submit">Guardar cambios</button></div></form></dialog>
+</AdminLayout>
+<script>import '../../scripts/admin';</script>

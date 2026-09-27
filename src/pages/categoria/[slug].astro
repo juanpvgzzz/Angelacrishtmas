@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LiveCatalog from '../../components/catalog/LiveCatalog.astro';
+import { categories } from '../../data/categories';
+export function getStaticPaths() { return categories.map(({ slug }) => ({ params: { slug } })); }
+---
+<BaseLayout title="Catálogo"><div class="container catalog-page"><div class="page-heading"><h1>Nuestro catálogo</h1></div><LiveCatalog categorySlug={Astro.params.slug} /></div></BaseLayout>

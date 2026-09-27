@@ -1,0 +1,91 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
+import { PGlite } from '@electric-sql/pglite';
+
+test('PostgreSQL: migración, RLS, restricciones y limpieza de fotografías', async () => {
+  const db = new PGlite();
+  try {
+    // Solo infraestructura mínima de prueba. El SQL de negocio es la migración real.
+    await db.exec(`
+      create role anon nologin; create role authenticated nologin;
+      create schema auth; create table auth.users(id uuid primary key);
+      create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+      grant usage on schema auth to anon, authenticated;
+      grant execute on function auth.uid() to anon, authenticated;
+      create schema storage;
+      create table storage.buckets(id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
+      create table storage.objects(id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets(id), name text unique);
+      alter table storage.objects enable row level security;
+      grant usage on schema storage to anon, authenticated;
+      grant select, insert, update, delete on storage.objects to anon, authenticated;
+    `);
+    for (const migration of readdirSync('supabase/migrations').filter(file => file.endsWith('.sql')).sort()) {
+      await db.exec(readFileSync(`supabase/migrations/${migration}`, 'utf8'));
+    }
+    const admin = '11111111-1111-4111-8111-111111111111', customer = '22222222-2222-4222-8222-222222222222';
+    const category = '33333333-3333-4333-8333-333333333333', product = '44444444-4444-4444-8444-444444444444';
+    const imagePath = `products/${product}/55555555-5555-4555-8555-555555555555.png`;
+    await db.exec(`insert into auth.users values ('${admin}'), ('${customer}'); insert into public.admin_users(user_id) values ('${admin}');
+      insert into public.categories(id,name,slug,active) values ('${category}', 'Visible', 'visible', true);
+      insert into public.categories(name,slug,active) values ('Oculta','oculta',false);
+      insert into public.products(id,category_id,name,slug,active) values ('${product}','${category}','Producto','producto',true);
+      insert into public.products(category_id,name,slug,active) values ('${category}','Oculto','oculto',false);
+      insert into public.products(category_id,name,slug,active,availability) values ('${category}','Agotado','agotado',true,'sold_out');
+    `);
+    const count = async (table: string) => (await db.query<{ count: number }>(`select count(*)::int as count from ${table}`)).rows[0].count;
+    await db.exec('set role anon');
+    assert.equal(await count('public.categories'), 1);
+    assert.equal(await count('public.products'), 2);
+    await assert.rejects(db.exec("select * from public.admin_users"), /permission denied/);
+    for (const sql of ["insert into public.categories(name,slug) values ('No','no')", `update public.products set active=false where id='${product}'`, `delete from public.products where id='${product}'`]) await assert.rejects(db.exec(sql), /permission denied/);
+    await db.exec(`reset role; set role authenticated; select set_config('request.jwt.claim.sub','${customer}',false)`);
+    assert.equal(await count('public.admin_users'), 0);
+    assert.equal(await count('public.products'), 2);
+    await assert.rejects(db.exec(`insert into public.admin_users(user_id) values ('${customer}')`), /permission denied/);
+    await assert.rejects(db.exec("insert into public.categories(name,slug) values ('No','no')"), /row-level security/);
+    assert.equal((await db.query(`update public.products set active=false where id='${product}' returning id`)).rows.length, 0);
+    await assert.rejects(db.exec(`insert into storage.objects(bucket_id,name) values ('product-images','${imagePath}')`), /row-level security/);
+    await db.exec(`select set_config('request.jwt.claim.sub','${admin}',false)`);
+    assert.equal(await count('public.admin_users'), 1);
+    assert.equal(await count('public.products'), 3);
+    await db.exec("insert into public.categories(name,slug) values ('Nueva','nueva')");
+    await assert.rejects(db.exec("insert into public.categories(name,slug) values ('Duplicada','nueva')"), /unique constraint/);
+    await db.exec("delete from public.categories where slug='nueva'");
+    assert.equal((await db.query<{ section: string }>(`select section from public.categories where id='${category}'`)).rows[0].section, 'navidad');
+    await assert.rejects(db.exec(`update public.categories set section='invalid' where id='${category}'`), /check constraint/);
+    await db.exec(`update public.categories set section='munecas-de-trapo' where id='${category}'`);
+    assert.equal((await db.query<{ section: string }>(`select c.section from public.products p join public.categories c on c.id=p.category_id where p.id='${product}'`)).rows[0].section, 'munecas-de-trapo');
+    await assert.rejects(db.exec(`delete from public.categories where id='${category}'`), /foreign key constraint/);
+    await assert.rejects(db.exec(`update public.products set price=-1 where id='${product}'`), /check constraint/);
+    await db.exec(`update public.products set price=null where id='${product}'`);
+    assert.equal((await db.query<{ price: number | null }>(`select price from public.products where id='${product}'`)).rows[0].price, null);
+    await db.exec(`insert into public.products(category_id,name,slug,price) values ('${category}','Cotización','cotizacion',null)`);
+    assert.equal((await db.query<{ price: number | null }>("select price from public.products where slug='cotizacion'")).rows[0].price, null);
+    await db.exec("delete from public.products where slug='cotizacion'");
+    await assert.rejects(db.exec(`update public.products set availability='invalid' where id='${product}'`), /check constraint/);
+    await assert.rejects(db.exec(`update public.products set images='[{"path":"javascript:alert(1)","kind":"photo","alt":"x","width":1,"height":1}]' where id='${product}'`), /check constraint/);
+    const before = (await db.query<{ updated_at: string }>(`select updated_at::text from public.products where id='${product}'`)).rows[0].updated_at;
+    await db.exec(`insert into public.image_cleanup(path) values ('${imagePath}'); insert into storage.objects(bucket_id,name) values ('product-images','${imagePath}');
+      update public.products set images='[{"path":"${imagePath}","kind":"photo","alt":"Foto","width":600,"height":720}]' where id='${product}';`);
+    assert.equal(await count('public.image_cleanup'), 0);
+    const after = (await db.query<{ updated_at: string }>(`select updated_at::text from public.products where id='${product}'`)).rows[0].updated_at;
+    assert.notEqual(String(after), String(before));
+    assert.equal((await db.query(`delete from storage.objects where name='${imagePath}' returning id`)).rows.length, 0, 'No eliminar imagen referenciada');
+    await db.exec(`update public.categories set active=false where id='${category}'; reset role; set role anon;`);
+    assert.equal(await count('public.products'), 0);
+    await db.exec(`reset role; set role authenticated; select set_config('request.jwt.claim.sub','${admin}',false); delete from public.products where id='${product}';`);
+    assert.equal(await count('public.image_cleanup'), 1);
+    assert.equal((await db.query(`delete from storage.objects where name='${imagePath}' returning id`)).rows.length, 1);
+    await db.exec('reset role');
+    const rls = await db.query<{ relname: string; relrowsecurity: boolean }>("select relname,relrowsecurity from pg_class join pg_namespace n on n.oid=relnamespace where n.nspname='public' and relkind='r'");
+    assert.ok(rls.rows.every(table => table.relrowsecurity));
+    const bucket = (await db.query<{ file_size_limit: number; allowed_mime_types: string[] }>("select * from storage.buckets where id='product-images'")).rows[0];
+    assert.equal(Number(bucket.file_size_limit), 5242880);
+    assert.deepEqual(bucket.allowed_mime_types, ['image/jpeg', 'image/png', 'image/webp']);
+    const seed = readFileSync('supabase/seeds/demo.sql', 'utf8');
+    await db.exec(seed); const seeded = await count('public.products'); await db.exec(seed);
+    assert.equal(await count('public.products'), seeded, 'Importación idempotente');
+    assert.equal((await db.query("select * from public.products where slug='papa-noel-de-navidad' and active")).rows.length, 0);
+  } finally { await db.close(); }
+});

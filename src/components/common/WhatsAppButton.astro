@@ -1,0 +1,10 @@
+---
+import Icon from './Icon.astro';
+import { getWhatsAppUrl } from '../../config/whatsapp';
+interface Props { productName?: string; imageUrl?: string; message?: string; label?: string; variant?: 'primary' | 'outline' | 'compact' | 'floating'; }
+const { productName, imageUrl, message, label = 'Hablemos por WhatsApp', variant = 'primary' } = Astro.props;
+const url = getWhatsAppUrl(productName, message, imageUrl);
+---
+<a class:list={['button', 'whatsapp-button', `button-${variant}`, { 'whatsapp-solid': variant !== 'outline' }]} href={url || '#contacto'} target={url ? '_blank' : undefined} rel={url ? 'noopener noreferrer' : undefined} aria-label={`${label}${productName ? `: ${productName}` : ''}${url ? ' (abre WhatsApp en otra pestaña)' : ' (contacto de demostración)'}`}>
+  <Icon name="whatsapp" size={20} /><span>{label}</span>
+</a>

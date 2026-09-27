@@ -1,0 +1,22 @@
+---
+import type { Product } from '../../types/catalog';
+import { formatPrice, availabilityLabels } from '../../utils/format';
+import WhatsAppButton from '../common/WhatsAppButton.astro';
+interface Props { product: Product; }
+const { product } = Astro.props;
+const image = product.images[0];
+---
+<article class="product-card">
+  <div class="product-image">
+    <img class:list={{ 'placeholder-image': !image || image.kind === 'placeholder' }} src={image?.src || '/images/brand/image-pending.svg'} alt={image?.alt || `Fotografía pendiente: ${product.name}`} width={image?.width || 600} height={image?.height || 720} loading="lazy" decoding="async" />
+    <span class:list={['availability', `availability-${product.availability}`]}>{availabilityLabels[product.availability]}</span>
+    {(!image || image.kind === 'placeholder') && <span class="image-caption">Imagen de muestra</span>}
+  </div>
+  <div class="product-info">
+    <h3><a class="product-detail-link" href={`/producto/?slug=${encodeURIComponent(product.slug)}`}>{product.name}</a></h3>
+    <p class="product-description">{product.shortDescription}</p>
+    {product.basePrice === null ? <p class="quote-price">Precio a cotizar</p> : <p class="price">{product.priceFrom && <span>Desde </span>}{formatPrice(product.basePrice)} <small>COP</small></p>}
+    {product.customizationOptions.length > 0 && <p class="customizable"><span aria-hidden="true">✧</span> Personalizable</p>}
+    <WhatsAppButton productName={product.name} imageUrl={image ? new URL(image.src, import.meta.env.PUBLIC_SITE_URL || Astro.url.origin).href : undefined} label="Cotizar" />
+  </div>
+</article>

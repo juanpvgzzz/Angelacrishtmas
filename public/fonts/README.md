@@ -1,0 +1,1 @@
+Las fuentes Berkshire Swash y Manrope se sirven localmente mediante paquetes `@fontsource`, importados en BaseLayout. No se realizan peticiones a Google Fonts. Esta carpeta queda reservada para archivos propios autorizados; las licencias de las fuentes se incluyen en sus respectivos paquetes.

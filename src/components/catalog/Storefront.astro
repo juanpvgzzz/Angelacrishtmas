@@ -1,0 +1,46 @@
+---
+import LiveCatalog from './LiveCatalog.astro';
+import Icon from '../common/Icon.astro';
+const banners = [
+ { id: 'flores', kicker: 'DETALLES QUE PERDURAN', title: 'Flores para siempre.', copy: 'Un gesto que florece, hecho a mano para ti.', cta: 'Explorar flores', filter: 'flores' },
+ { id: 'personalizados', kicker: 'TAN ESPECIAL COMO TÚ', title: 'Tu idea, nuestras manos.', copy: 'Colores y pequeños detalles que cuentan tu historia.', cta: 'Ver personalizables', filter: 'personalizados' },
+ { id: 'navidad', kicker: 'LA MAGIA DE LOS DETALLES', title: 'Una Navidad muy tuya.', copy: 'Piezas artesanales para celebrar tus tradiciones.', cta: 'Descubrir Navidad', filter: 'navidad' },
+];
+---
+<div class="container storefront">
+  <form class="mobile-search search-field" action="/catalogo/" role="search" aria-label="Buscar en el catálogo">
+    <Icon name="search" /><input type="search" name="q" aria-label="Buscar productos" placeholder="Busca flores, muñecas, adornos…" data-catalog-search autocomplete="off" />
+  </form>
+  <section class="banner-carousel" aria-label="Inspiración ÁMELA" aria-roledescription="carrusel">
+    <div class="banner-track" tabindex="0" aria-label="Banners: desliza o usa las flechas del teclado">
+      {banners.map((b, i) => <article class:list={['catalog-banner', 'banner-' + b.id]} id={'banner-' + b.id} aria-label={`${i + 1} de 3: ${b.title}`}>
+        <div class="banner-copy"><p class="eyebrow">{b.kicker}</p>{i === 0 ? <h1>{b.title}</h1> : <h2>{b.title}</h2>}<p class="banner-description">{b.copy}</p><a class="text-link" href={'/catalogo/?grupo=' + b.filter + '#creaciones'} data-banner-filter={b.filter}>{b.cta}<Icon name="arrow" size={18} /></a></div>
+        <div class="banner-visual" data-banner-art={b.id}>
+          <svg class="crafted-art" viewBox="0 0 400 400" role="img" aria-label={b.id === 'flores' ? 'Composición floral en tonos rosa y borgoña' : b.id === 'navidad' ? 'Composición de ramas y estrellas navideñas' : 'Composición de hilo y bordado artesanal'}>
+            <circle cx="200" cy="200" r="160" fill="var(--art-background)" />
+            <circle cx="200" cy="200" r="140" fill="none" stroke="var(--art-line)" stroke-width="1" />
+            {b.id === 'flores' ? <g><path d="M140 330Q200 260 160 130M210 330Q200 200 270 140M180 330V200" fill="none" stroke="#72806b" stroke-width="5" /><path d="M180 280q-65-5-60-50 55 0 60 50m30-25q60-5 65-45-60-5-65 45" fill="#a9b8a0" />{[{x:145,y:130,r:48},{x:265,y:140,r:40},{x:195,y:205,r:43}].map(f => <g transform={`translate(${f.x} ${f.y})`}>{[0,60,120,180,240,300].map(angle => <ellipse cy={-f.r/2} rx={f.r/2.2} ry={f.r/1.5} transform={`rotate(${angle})`} fill={f.x === 265 ? '#7b1e32' : '#d8a7b1'} stroke="#b88090" stroke-width="1" />)}<circle r="13" fill="#f4dfbb" /></g>)}<path d="m154 319 55-5-8 30-32 4Z" fill="#7b1e32" /></g> : b.id === 'personalizados' ? <g fill="none"><circle cx="200" cy="200" r="104" stroke="#c59a55" stroke-width="9" /><circle cx="200" cy="200" r="96" fill="#fff9f5" stroke="#d8a7b1" /><path d="M200 253 145 199c-40-45 25-82 55-36 30-46 95-9 55 36Z" stroke="#7b1e32" stroke-width="3" stroke-dasharray="5 5" /><path d="m244 140 60-66-51 76Z" stroke="#74696b" stroke-width="3" /><path d="M299 77c-4-56-98-26-41 13s92 68 43 129" stroke="#b88090" stroke-width="3" /><path d="M176 88v-15h48v15" stroke="#c59a55" stroke-width="7" /></g> : <g><path d="m200 83-65 83h33l-57 75h46l-60 72h206l-60-72h46l-57-75h33Z" fill="#72806b" /><path d="M200 313v28" stroke="#7b1e32" stroke-width="14" />{[{x:176,y:183},{x:225,y:225},{x:166,y:273},{x:236,y:285}].map(p=><circle cx={p.x} cy={p.y} r="9" fill="#f4dfbb" />)}<path d="m200 50 7 16 18 2-14 12 4 18-15-9-15 9 4-18-14-12 18-2Z" fill="#c59a55" /></g>}
+          </svg>
+          <span class="art-signature">ÁMELA · Hecho a mano</span>
+        </div>
+      </article>)}
+    </div>
+    <div class="banner-pagination" aria-label="Elegir banner">{banners.map((b,i)=><button type="button" data-banner-page={i} aria-label={'Mostrar banner: ' + b.title} aria-pressed={i === 0}><span></span></button>)}</div>
+  </section>
+  <section class="shop-catalog" id="creaciones" aria-labelledby="catalog-title">
+    <div class="shop-heading"><div><p class="eyebrow">HECHO CON AMOR, ELEGIDO POR TI</p><h2 id="catalog-title">Encuentra tu detalle</h2></div><p>Artesanía que se siente especial.</p></div>
+    <LiveCatalog />
+  </section>
+  <section class="shop-note" id="como-comprar"><Icon name="needle" /><div><h2>Lo hacemos a tu medida</h2><p>Elige tu pieza y conversemos por WhatsApp sobre colores, tiempos y personalización. Elaboramos tu pedido con un anticipo del 50%.</p></div><a class="text-link" href="#contacto">Conversemos <Icon name="arrow" size={18} /></a></section>
+</div>
+<script>
+const track = document.querySelector<HTMLElement>('.banner-track');
+const dots = document.querySelectorAll<HTMLButtonElement>('[data-banner-page]');
+if (track) {
+ const slides = Array.from(track.children) as HTMLElement[];
+ const go = (index: number) => track.scrollTo({left: slides[index].offsetLeft - slides[0].offsetLeft, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+ dots.forEach((dot,index)=>dot.addEventListener('click',()=>go(index)));
+ track.addEventListener('scroll',()=>{const i = slides.reduce((best,slide,index)=>Math.abs(slide.offsetLeft-slides[0].offsetLeft-track.scrollLeft)<Math.abs(slides[best].offsetLeft-slides[0].offsetLeft-track.scrollLeft)?index:best,0);dots.forEach((d,n)=>d.setAttribute('aria-pressed',String(n===i)));},{passive:true});
+ track.addEventListener('keydown',event=>{if(event.target!==track || !['ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();const index=Array.from(dots).findIndex(d=>d.getAttribute('aria-pressed')==='true');go(Math.max(0,Math.min(2,index+(event.key==='ArrowRight'?1:-1))));});
+}
+</script>

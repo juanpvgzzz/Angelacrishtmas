@@ -1,0 +1,18 @@
+---
+import { brand } from '../../config/brand';
+const steps = [
+  ['Explora', 'Recorre nuestras colecciones.'],
+  ['Elige', 'Selecciona una pieza o imagina una personalización.'],
+  ['Conversemos', 'Consulta por WhatsApp.'],
+  ['Acordamos', 'Confirmamos detalles, valor y disponibilidad.'],
+  ['Reserva', 'Realiza el anticipo del 50%.'],
+  ['Creamos', 'Elaboramos tu pieza y acordamos la entrega.'],
+];
+---
+<section class="process-section" id="como-comprar" aria-labelledby="process-title">
+  <div class="container">
+    <div class="section-heading"><p class="eyebrow">DE NUESTRAS MANOS A LAS TUYAS</p><h2 id="process-title">Así empieza algo especial</h2></div>
+    <ol class="process-grid">{steps.map(([title, text], index) => <li><span class="step-number">{String(index + 1).padStart(2, '0')}</span><h3>{title}</h3><p>{text}</p></li>)}</ol>
+    <p class="process-note">{brand.purchase}</p>
+  </div>
+</section>

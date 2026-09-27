@@ -1,0 +1,36 @@
+---
+import Brand from './Brand.astro';
+import WhatsAppButton from './WhatsAppButton.astro';
+import Icon from './Icon.astro';
+const links = [['/catalogo/', 'Catálogo'], ['/catalogo/?grupo=flores', 'Flores eternas'], ['/catalogo/?grupo=personalizados', 'Personalizados'], ['/catalogo/?grupo=navidad', 'Navidad'], ['/#contacto', 'Contacto']];
+---
+<header class="site-header">
+  <div class="container header-inner">
+    <Brand />
+    <form class="header-search search-field" action="/catalogo/" role="search" aria-label="Buscar productos en ÁMELA"><Icon name="search" /><input type="search" name="q" aria-label="Buscar productos" placeholder="Busca flores, muñecas, adornos…" data-catalog-search autocomplete="off" /></form>
+    <a class="header-search-toggle" href="/catalogo/#creaciones" aria-label="Buscar en el catálogo"><Icon name="search" /></a>
+    <nav class="desktop-nav" aria-label="Navegación principal">{links.map(([href, label]) => <a href={href} aria-current={href === Astro.url.pathname ? 'page' : undefined}>{label}</a>)}</nav>
+    <WhatsAppButton label="WhatsApp" variant="compact" />
+    <details class="mobile-menu">
+      <summary aria-label="Menú de navegación"><Icon name="menu" /></summary>
+      <nav aria-label="Navegación móvil">{links.map(([href, label]) => <a href={href} aria-current={href === Astro.url.pathname ? 'page' : undefined}>{label}</a>)}</nav>
+    </details>
+  </div>
+</header>
+<script>
+  const menu = document.querySelector<HTMLDetailsElement>('.mobile-menu');
+  menu?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+    menu.open = false;
+    const target = new URL(link.href).hash;
+    if (target && location.pathname === '/') {
+      const section = document.querySelector<HTMLElement>(target);
+      if (section) { section.tabIndex = -1; section.focus({ preventScroll: true }); }
+    }
+  }));
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && menu?.open) { menu.open = false; menu.querySelector('summary')?.focus(); }
+  });
+  document.addEventListener('click', event => {
+    if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+  });
+</script>

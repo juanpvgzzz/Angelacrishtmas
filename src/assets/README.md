@@ -1,0 +1,1 @@
+Recursos importados y procesados por Astro. Las ilustraciones provisionales se encuentran en `public/images`; las fotografías reales podrán importarse aquí para optimización con `astro:assets` o servirse desde Firebase Storage en la siguiente etapa.

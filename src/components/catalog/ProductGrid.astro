@@ -1,0 +1,8 @@
+---
+import ProductCard from './ProductCard.astro';
+import Icon from '../common/Icon.astro';
+import type { Product } from '../../types/catalog';
+interface Props { products: Product[]; }
+const { products } = Astro.props;
+---
+{products.length ? <div class="product-grid">{products.map((product) => <ProductCard product={product} />)}</div> : <div class="empty-state"><Icon name="needle" size={42} /><h2>Nuevas creaciones en camino</h2><p>Estamos preparando piezas especiales para esta categoría. Mientras tanto, descubre el resto del catálogo.</p><a class="button button-primary" href="/catalogo/">Explorar el catálogo</a></div>}

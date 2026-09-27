@@ -1,0 +1,48 @@
+---
+import Icon from '../common/Icon.astro';
+---
+<div class="login-layout">
+  <aside class="login-story" aria-label="ÁMELA, tu taller digital">
+    <a class="admin-brand" href="/">ÁMELA<span>HANDMADE WITH LOVE</span></a>
+    <div class="login-story-copy"><span class="login-emblem"><Icon name="needle" size={58} /></span><p class="eyebrow">TU TALLER DIGITAL</p><h2>Más tiempo<br />para crear.</h2><p>Tus piezas, tus fotografías y tus ideas.<br />Todo en un mismo lugar.</p></div>
+    <p class="login-signature">Detalles hechos con las manos.<br />Recuerdos hechos con el corazón.</p>
+  </aside>
+  <section class="admin-card" aria-labelledby="admin-title">
+    <span class="login-lock"><Icon name="lock" size={24} /></span>
+    <p class="eyebrow">BIENVENIDA A TU ESPACIO</p><h1 id="admin-title">Qué bueno verte.</h1>
+    <p class="login-intro">Entra para darle vida a tu catálogo de ÁMELA.</p>
+    <form id="admin-login"><fieldset><legend>Acceso de la administradora</legend>
+      <label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="username" placeholder="tu@correo.com" required />
+      <label for="password">Contraseña</label><div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Escribe tu contraseña" required /><button type="button" id="show-password" aria-controls="password" aria-pressed="false">Mostrar</button></div>
+      <button class="button button-primary" type="submit">Iniciar sesión <Icon name="arrow" size={18} /></button>
+    </fieldset></form><p id="login-status" role="status" aria-live="polite"></p>
+    <p class="login-help">Usa el correo y la contraseña de tu cuenta administradora.</p>
+    <a class="text-link" href="/catalogo/">← Volver al catálogo público</a>
+  </section>
+</div>
+<script>
+import { getSupabase } from '../../services/supabase/client';
+import { requireAdmin } from '../../services/supabase/catalog';
+const form = document.querySelector<HTMLFormElement>('#admin-login')!;
+const status = document.querySelector<HTMLElement>('#login-status')!;
+const toggle = document.querySelector<HTMLButtonElement>('#show-password')!;
+const password = document.querySelector<HTMLInputElement>('#password')!;
+toggle.addEventListener('click', () => {
+  const show = password.type === 'password';
+  password.type = show ? 'text' : 'password';
+  toggle.textContent = show ? 'Ocultar' : 'Mostrar';
+  toggle.setAttribute('aria-pressed', String(show));
+});
+form.addEventListener('submit', async event => {
+event.preventDefault(); const fieldset = form.querySelector('fieldset')!;
+const data = new FormData(form); fieldset.disabled = true; status.textContent = 'Comprobando acceso…';
+try {
+const db = getSupabase();
+const { error } = await db.auth.signInWithPassword({ email: String(data.get('email')).trim(), password: String(data.get('password')) });
+if (error) { status.textContent = 'No se pudo iniciar sesión. Revisa el correo y la contraseña.'; return; }
+if (!await requireAdmin()) { await db.auth.signOut(); status.textContent = 'Esta cuenta no tiene acceso administrativo.'; return; }
+location.replace('/admin/');
+} catch { status.textContent = 'No pudimos conectar. Revisa tu conexión e intenta de nuevo. Si continúa, contacta a quien administra tu sitio.'; }
+finally { fieldset.disabled = false; (form.elements.namedItem('password') as HTMLInputElement).value = ''; }
+});
+</script>

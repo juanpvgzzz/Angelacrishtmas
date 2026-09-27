@@ -1,0 +1,8 @@
+---
+import { brand } from '../../config/brand';
+interface Props { footer?: boolean }
+const { footer = false } = Astro.props;
+---
+<a href="/" class:list={['brand', { 'brand-footer': footer }]} aria-label="ÁMELA, inicio">
+  <span><span class="brand-name">{brand.name}</span><span class="brand-caption">{brand.tagline}</span></span>
+</a>

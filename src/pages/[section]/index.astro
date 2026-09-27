@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LiveCatalog from '../../components/catalog/LiveCatalog.astro';
+import SectionTabs from '../../components/catalog/SectionTabs.astro';
+import { sections } from '../../config/sections';
+export function getStaticPaths() {
+  return sections.map(section => ({ params: { section: section.id }, props: { section } }));
+}
+const { section } = Astro.props;
+---
+<BaseLayout title={section.name}>
+  <div class="container catalog-page">
+    <nav class="breadcrumbs" aria-label="Ruta de navegación"><a href="/">Inicio</a><span aria-hidden="true">/</span><a href="/catalogo/">Catálogo</a><span aria-hidden="true">/</span><span aria-current="page">{section.name}</span></nav>
+    <div class="page-heading"><p class="eyebrow">CREACIONES DE ÁMELA</p><h1>{section.name}</h1><p>{section.description}</p></div>
+    <SectionTabs selected={section.id} />
+    <LiveCatalog section={section.id} />
+    <p class="catalog-closing">Cada pieza toma su tiempo. <a href="/#como-comprar">Conoce cómo hacemos tu pedido →</a></p>
+  </div>
+</BaseLayout>

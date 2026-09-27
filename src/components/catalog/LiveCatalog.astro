@@ -1,0 +1,9 @@
+---
+interface Props { featured?: boolean; categorySlug?: string; section?: string; }
+const { featured = false, categorySlug = '', section = '' } = Astro.props;
+---
+<div data-live-catalog data-featured={String(featured)} data-category={categorySlug} data-section={section}>
+  <p role="status" aria-live="polite">Cargando catálogo…</p>
+  <noscript>Activa JavaScript para consultar el catálogo actualizado.</noscript>
+</div>
+<script>import '../../scripts/public-catalog';</script>

@@ -1,0 +1,53 @@
+﻿@layer responsive {
+  .public-store { --motion-ease:cubic-bezier(.22,1,.36,1); }
+  .public-store .motion-pending { opacity:0; }
+  .public-store .button, .public-store button, .public-store .mobile-menu summary {
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 220ms ease, transform 220ms var(--motion-ease);
+  }
+  .public-store .button:focus-visible { box-shadow:0 5px 16px #7b1e3220; }
+  .public-store .button:active, .public-store button:active, .public-store .mobile-menu summary:active { transform:scale(.97); }
+  .public-store .product-card { transition:transform 250ms var(--motion-ease); }
+  .public-store .product-image img { transition:transform 500ms var(--motion-ease); }
+  .card-quick-action { display:none; }
+  .public-store .text-link svg, .card-quick-action svg { transition:transform 220ms var(--motion-ease); }
+  .public-store .text-link:focus-visible svg { transform:translateX(4px); }
+  .public-store .catalog-groups button { transition:background-color 200ms, color 200ms, border-color 200ms, transform 220ms var(--motion-ease), box-shadow 220ms; }
+  .public-store .catalog-groups button[aria-pressed='true'] { box-shadow:0 3px 10px #7b1e3218; }
+  .public-store .banner-track, .public-store .catalog-groups { scroll-behavior:smooth; }
+  .public-store .banner-pagination span { transition:background-color 200ms, transform 250ms var(--motion-ease); width:6px; }
+  .public-store .banner-pagination [aria-pressed='true'] span { width:6px; transform:scaleX(3); }
+  .public-store .site-header { transition:transform 280ms var(--motion-ease), box-shadow 280ms; transform-origin:top; }
+  .public-store .site-header.is-compact { transform:translateY(-6px); box-shadow:0 4px 20px #3528280c; }
+  .public-store .site-header .brand { transform-origin:left center; transition:transform 280ms var(--motion-ease); }
+  .public-store .site-header.is-compact .brand { transform:scale(.94); }
+  .public-store .desktop-nav a, .public-store .mobile-menu nav a { position:relative; text-decoration:none; }
+  .public-store .desktop-nav a::after, .public-store .mobile-menu nav a::after { content:''; position:absolute; left:0; right:0; bottom:7px; height:1px; background:var(--brand); transform:scaleX(0); transform-origin:left; transition:transform 220ms var(--motion-ease); }
+  .public-store .mobile-menu nav a::after { left:12px; right:12px; }
+  .public-store .desktop-nav a:focus-visible::after, .public-store .desktop-nav a[aria-current]::after, .public-store .mobile-menu nav a:focus-visible::after { transform:scaleX(1); }
+  .public-store .mobile-menu[open] nav { animation:amela-menu-in 220ms var(--motion-ease) both; }
+  .public-store .product-detail-copy > .whatsapp-button { box-shadow:0 5px 18px #7b1e321c; }
+  .public-store .gallery-thumbnails button { transition:transform 180ms var(--motion-ease), border-color 180ms, box-shadow 180ms; }
+  .public-store .gallery-thumbnails button[aria-pressed='true'] { box-shadow:0 3px 12px #7b1e321a; }
+  @keyframes amela-menu-in { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  @media (min-width:768px) { .public-store .site-header.is-compact { transform:translateY(-10px); } }
+  @media (hover:hover) and (pointer:fine) {
+    .public-store .product-card:hover { transform:translateY(-4px); }
+    .public-store .product-card:hover .product-image img, .public-store .product-card:focus-within .product-image img { transform:scale(1.05); }
+    .public-store .card-quick-action { display:flex; align-items:center; justify-content:center; gap:10px; position:absolute; left:12px; right:12px; bottom:38px; padding:11px 8px; border-radius:6px; background:var(--background); color:var(--brand); font-size:.8rem; opacity:0; transform:translateY(8px); transition:opacity 200ms, transform 250ms var(--motion-ease); }
+    .public-store .product-card:hover .card-quick-action, .public-store .product-card:focus-within .card-quick-action { opacity:1; transform:translateY(0); }
+    .public-store .product-card:hover .card-quick-action svg, .public-store .product-card:focus-within .card-quick-action svg, .public-store .text-link:hover svg { transform:translateX(4px); }
+    .public-store .button:hover, .public-store button:hover { transform:translateY(-2px); box-shadow:0 5px 16px #7b1e321c; }
+    .public-store .button:active, .public-store button:active { transform:scale(.97); }
+    .public-store .desktop-nav a:hover::after, .public-store .mobile-menu nav a:hover::after { transform:scaleX(1); }
+  }
+  @media (hover:none), (pointer:coarse) {
+    .public-store .product-card:hover { transform:none; }
+    .public-store .product-card:active { transform:scale(.98); }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .public-store .motion-pending { opacity:1; }
+    .public-store button:hover { transform:none; }
+    .public-store *, .public-store *::before, .public-store *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+    .public-store .product-card:hover, .public-store .product-card:active, .public-store .button:hover, .public-store .button:active, .public-store button:active, .public-store .product-card:hover .product-image img, .public-store .product-card:focus-within .product-image img { transform:none; }
+  }
+}

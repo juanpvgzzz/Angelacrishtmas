@@ -1,0 +1,103 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dev } from 'astro';
+import { chromium, expect } from '@playwright/test';
+import { createClient } from '@supabase/supabase-js';
+process.loadEnvFile('.env');
+const suppliedCredentials = process.argv.includes('--stdin-credentials');
+let credential;
+if (suppliedCredentials) {
+  let input = '';
+  for await (const chunk of process.stdin) input += chunk;
+  credential = JSON.parse(input);
+  assert.ok(typeof credential.email === 'string' && typeof credential.password === 'string');
+} else {
+  const credentials = JSON.parse(readFileSync('test-results/.remote-auth.local.json', 'utf8'));
+  credential = credentials.find(row => row.purpose === 'admin');
+  assert.ok(credential.email.startsWith('verification-') && credential.email.endsWith('@example.invalid'));
+}
+const unique = crypto.randomUUID();
+const section = process.argv.find(argument => argument.startsWith('--section='))?.slice('--section='.length) || 'navidad';
+assert.ok(['navidad', 'munecas-de-trapo'].includes(section));
+const slug = `verificacion-${unique}`;
+const categoryName = `Verificación temporal ${unique}`;
+const productName = `Verificación temporal, no está en venta ${unique}`;
+const db = createClient(process.env.PUBLIC_SUPABASE_URL, process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+const baseUrlArgument = process.argv.find(argument => argument.startsWith('--base-url='));
+const baseUrl = baseUrlArgument ? new URL(baseUrlArgument.slice('--base-url='.length)).origin : 'http://127.0.0.1:4323';
+const server = baseUrlArgument ? null : await dev({ server: { host: '127.0.0.1', port: 4323 }, logLevel: 'error' });
+let browser;
+const must = result => { assert.ifError(result.error); return result.data; };
+try {
+  browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', event => { if (event.type() === 'error') errors.push(event.text()); });
+  await page.goto(`${baseUrl}/admin/login/`);
+  await page.getByLabel('Correo electrónico').fill(credential.email);
+  await page.getByLabel('Contraseña', { exact: true }).fill(credential.password);
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+  await expect(page.locator('#admin-panel')).toBeVisible({ timeout: 15000 });
+  await page.getByRole('button', { name: 'Crear categoría', exact: true }).click();
+  await page.getByLabel('Sección', { exact: true }).selectOption(section);
+  await page.getByLabel('Nombre', { exact: true }).fill(categoryName);
+  await page.getByLabel('Slug', { exact: true }).fill(slug);
+  await page.getByLabel('Visible en el catálogo').check();
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.locator('#editor')).not.toBeVisible({ timeout: 15000 });
+  await page.getByRole('button', { name: 'Crear producto', exact: true }).click();
+  await page.getByLabel('Sección', { exact: true }).selectOption(section);
+  await page.getByLabel('Nombre', { exact: true }).fill(productName);
+  await page.getByLabel('Slug', { exact: true }).fill(slug);
+  await page.getByRole('combobox', { name: 'Categoría', exact: true }).selectOption({ label: categoryName });
+  await page.getByLabel('Descripción corta', { exact: true }).fill('Prueba temporal de integración; no se ofrece a la venta.');
+  await page.getByLabel('Precio en pesos colombianos').fill('10000');
+  await page.getByLabel('Visible en el catálogo').check();
+  await page.locator('#photo-input').setInputFiles({ name: 'prueba.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5WQAAAAASUVORK5CYII=', 'base64') });
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.locator('#editor')).not.toBeVisible({ timeout: 20000 });
+  const publicPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await publicPage.goto(`${baseUrl}/producto/?slug=${slug}`);
+  await expect(publicPage.locator('#product-title')).toHaveText(productName, { timeout: 15000 });
+  await expect(publicPage.locator('.detail-price')).toContainText('10.000');
+  await expect(publicPage.locator('#main-product-image')).toHaveJSProperty('complete', true);
+  assert.ok(await publicPage.locator('#main-product-image').evaluate(image => image.naturalWidth > 0));
+  await publicPage.screenshot({ path: 'test-results/live-product-desktop.png', fullPage: true });
+  await publicPage.goto(`${baseUrl}/${section}/`);
+  await expect(publicPage.locator('.product-detail-link').filter({ hasText: productName })).toBeVisible();
+  const otherSection = section === 'navidad' ? 'munecas-de-trapo' : 'navidad';
+  await publicPage.goto(`${baseUrl}/${otherSection}/`);
+  await expect(publicPage.locator('[data-live-catalog] .category-tabs')).toBeVisible();
+  await expect(publicPage.locator('.product-detail-link').filter({ hasText: productName })).toHaveCount(0);
+  await publicPage.goto(`${baseUrl}/producto/?slug=${slug}`);
+  const row = page.locator('#product-list .admin-row').filter({ hasText: productName });
+  await row.getByRole('button', { name: 'Ocultar', exact: true }).click();
+  await expect(row).toContainText('Oculto');
+  await publicPage.reload();
+  await expect(publicPage.getByRole('heading', { name: 'Producto no disponible' })).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  await row.getByRole('button', { name: 'Eliminar', exact: true }).click();
+  await expect(row).toHaveCount(0, { timeout: 15000 });
+  const categoryRow = page.locator('#category-list .admin-row').filter({ hasText: categoryName });
+  page.once('dialog', dialog => dialog.accept());
+  await categoryRow.getByRole('button', { name: 'Eliminar', exact: true }).click();
+  await expect(categoryRow).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/live-admin-mobile.png', fullPage: true });
+  assert.deepEqual(errors, []);
+  if (!suppliedCredentials) {
+    await page.getByRole('button', { name: 'Cerrar sesión' }).click();
+    await expect(page).toHaveURL(/admin\/login/);
+  }
+  console.log('Navegador real sin mocks: login, CRUD, foto, ficha sin recompilar, ocultación, borrado, móvil/escritorio y consola correctos.');
+} finally {
+  must(await db.auth.signInWithPassword({ email: credential.email, password: credential.password }));
+  const remaining = must(await db.from('products').select('id,images').eq('slug', slug));
+  const paths = remaining.flatMap(row => row.images.map(image => image.path));
+  must(await db.from('products').delete().eq('slug', slug));
+  must(await db.from('categories').delete().eq('slug', slug));
+  if (paths.length) { must(await db.storage.from('product-images').remove(paths)); must(await db.from('image_cleanup').delete().in('path', paths)); }
+  await db.auth.signOut({ scope: 'local' });
+  await browser?.close();
+  await server?.stop();
+}

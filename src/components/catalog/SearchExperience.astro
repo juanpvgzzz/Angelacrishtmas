@@ -1,0 +1,15 @@
+﻿---
+import Icon from '../common/Icon.astro';
+---
+<dialog id="search-dialog" aria-labelledby="search-dialog-title">
+  <div class="search-dialog-top"><h2 id="search-dialog-title">Encuentra algo especial</h2><button type="button" class="search-close" aria-label="Cerrar búsqueda"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div>
+  <form class="search-field dialog-search" action="/catalogo/" role="search" aria-label="Búsqueda predictiva"><Icon name="search" /><input type="search" name="q" aria-label="Buscar productos" placeholder="Flores, muñecas, un regalo…" autocomplete="off" maxlength="160" data-search-dialog-input /></form>
+  <div data-search-dialog-results></div>
+</dialog>
+<div id="search-suggestions" class="search-suggestions" hidden>
+  <p class="suggestion-heading" data-search-heading>Para inspirarte</p>
+  <p class="search-status" role="status" aria-live="polite" data-search-status></p>
+  <div id="search-options" role="listbox" aria-label="Sugerencias del catálogo"></div>
+  <div data-search-empty></div>
+</div>
+<script>import '../../scripts/predictive-search';</script>
