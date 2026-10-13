@@ -22,7 +22,7 @@ export function toProduct(row: ProductRow): Product {
     priceFrom: row.price_from, currency: 'COP', customizable: row.customizable,
     availability: row.availability === 'made_to_order' ? 'under-order' : row.availability === 'sold_out' ? 'unavailable' : 'available',
     productionTime: row.production_time, customizationOptions: row.customizable ? row.customization_options : [],
-    featured: row.featured, active: row.active, order: row.sort_order, createdAt: row.created_at,
+    featured: row.featured, featuredOrder: row.featured_order, active: row.active, order: row.sort_order, createdAt: row.created_at,
     images: images.map(image => ({ ...image, src: imageUrl(image.path) })) };
 }
 export async function publicCatalog() {

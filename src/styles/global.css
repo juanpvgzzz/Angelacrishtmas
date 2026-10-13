@@ -12,18 +12,27 @@
 }
 @layer base {
   :root {
-    --background: #FFF9F5;
-    --surface: #FFFFFF;
-    --brand: #7B1E32;
-    --brand-hover: #591322;
-    --accent-rose: #D8A7B1;
-    --surface-rose: #F4E4E7;
-    --accent-sage: #A9B8A0;
-    --accent-gold: #C59A55;
-    --text: #352828;
-    --text-muted: #74696B;
-    --border: color-mix(in srgb, var(--text) 17%, var(--surface));
-    --surface-sage: color-mix(in srgb, var(--accent-sage) 23%, var(--surface));
+    --palette-wine: #7B1E32;
+    --palette-cream: #FFF9F5;
+    --palette-pastel-pink: #F4E4E7;
+    --palette-soft-pink: #EFDADB;
+    --palette-antique-pink: #D8A7B1;
+    --palette-white: #FFFFFF;
+    --palette-light-gray: #DDDADA;
+    --palette-sage: #A9B8A0;
+    --palette-dark: #18181A;
+    --background: var(--palette-cream);
+    --surface: var(--palette-white);
+    --brand: var(--palette-wine);
+    --brand-hover: var(--palette-wine);
+    --accent-rose: var(--palette-antique-pink);
+    --surface-rose: var(--palette-pastel-pink);
+    --accent-sage: var(--palette-sage);
+    --accent-gold: var(--palette-antique-pink);
+    --text: var(--palette-dark);
+    --text-muted: var(--palette-dark);
+    --border: var(--palette-light-gray);
+    --surface-sage: var(--palette-sage);
     /* Alias conservados para los componentes y formularios existentes. */
     --red: var(--brand); --forest: var(--brand); --ivory: var(--background);
     --white: var(--surface); --brown: var(--text); --muted: var(--text-muted);
@@ -31,6 +40,19 @@
     --gold: var(--accent-gold); --gold-line: var(--border); --whatsapp: var(--brand);
     --shadow: 0 3px 12px color-mix(in srgb, var(--text) 4%, transparent);
     --shadow-raised: 0 6px 18px color-mix(in srgb, var(--text) 8%, transparent);
+    --shadow-card: 0 14px 36px color-mix(in srgb, var(--brand) 9%, transparent);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --duration-fast: 180ms;
+    --duration-soft: 280ms;
     --display: Georgia, 'Times New Roman', serif;
     --body: 'Manrope', sans-serif;
   }

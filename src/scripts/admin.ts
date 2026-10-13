@@ -1,4 +1,5 @@
 import { initCatalogContent } from './admin-catalog-content';
+import { loadBanners } from './admin-banners';
 import { prepareImage } from '../utils/admin-image';
 import { getSupabase } from '../services/supabase/client';
 import { readAll } from '../services/supabase/read-all';
@@ -24,6 +25,10 @@ const dialog = $<HTMLDialogElement>('#editor');
 const form = $<HTMLFormElement>('#catalog-form');
 const message = (text: string) => { $('#admin-status').textContent = text; };
 const button = (label: string, action: string, id: string) => `<button type="button" class="button button-outline" data-action="${action}" data-id="${id}">${label}</button>`;
+const pFeaturedOrder = (id: string, enabled: boolean) => {
+  const row = products.find(p => p.id === id);
+  return row?.featured ? row.featured_order : enabled ? Math.max(0, ...products.filter(p => p.featured).map(p => p.featured_order)) + 1 : 0;
+};
 
 async function refresh() {
   const db = getSupabase();
@@ -35,6 +40,8 @@ async function refresh() {
   renderCatalog();
 }
 function renderCatalog() {
+  const featured = products.filter(p => p.featured).sort((a, b) => a.featured_order - b.featured_order || a.sort_order - b.sort_order || a.id.localeCompare(b.id));
+  $('#featured-list').innerHTML = featured.length ? featured.map((p, index) => `<article class="admin-row"><div class="admin-item"><strong>${index + 1}. ${e(p.name)}</strong><span class="status-badge ${p.active ? 'active' : ''}">${p.active ? 'Activo' : 'Oculto'}</span></div><div class="admin-actions"><button class="button button-outline" type="button" data-featured-move="up" data-id="${p.id}" ${index === 0 ? 'disabled' : ''} aria-label="Subir ${e(p.name)}">Subir</button><button class="button button-outline" type="button" data-featured-move="down" data-id="${p.id}" ${index === featured.length - 1 ? 'disabled' : ''} aria-label="Bajar ${e(p.name)}">Bajar</button><button class="button button-outline" type="button" data-featured-remove data-id="${p.id}">Quitar destacado</button></div></article>`).join('') : '<p>Aún no hay productos destacados. Abre un producto y marca «Destacar producto».</p>';
   const shownCategories = categories.filter(row => !sectionFilter.value || row.section === sectionFilter.value);
   const shownProducts = products.filter(row => shownCategories.some(category => category.id === row.category_id));
   $('#admin-summary').innerHTML = [
@@ -84,7 +91,7 @@ function openEditor(type: 'categories' | 'products', id?: string) {
   $('#editor-title').textContent = `${row ? 'Editar' : 'Crear'} ${type === 'categories' ? 'categoría' : 'producto'}`;
   $('#editor-status').textContent = '';
   $('#editor-fields').innerHTML = `${field('Nombre', 'name', row?.name, 'required maxlength="160"')}${field('Slug', 'slug', row?.slug, 'required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="120"')}${area('Descripción completa', 'description', row?.description || '')}${field('Orden', 'sort_order', row?.sort_order || 0, 'type="number" required step="1" min="0" max="2147483647"')}${check('Visible en el catálogo', 'active', row?.active ?? false)}
-  ${type === 'products' ? `<label>Categoría<select name="category_id" required><option value="">Selecciona una categoría</option>${categories.map(category => `<option value="${category.id}" ${p?.category_id === category.id ? 'selected' : ''}>${e(category.name)}${category.active ? '' : ' (oculta)'}</option>`).join('')}</select></label>${field('Descripción corta', 'short_description', p?.short_description, 'required maxlength="500"')}${field('Precio en pesos colombianos (opcional)', 'price', p?.price ?? '', 'type="number" min="0" max="9999999999.99" step="0.01" aria-describedby="price-help"')}<p id="price-help">Déjalo vacío para recibir cotizaciones por WhatsApp. Si escribes un precio, se mostrará en el catálogo.</p>${check('Precio desde', 'price_from', p?.price_from)}${field('Moneda', 'currency', 'COP', 'readonly')}<label>Disponibilidad<select name="availability"><option value="available" ${p?.availability === 'available' ? 'selected' : ''}>Disponible</option><option value="made_to_order" ${!p || p.availability === 'made_to_order' ? 'selected' : ''}>Bajo pedido</option><option value="sold_out" ${p?.availability === 'sold_out' ? 'selected' : ''}>Agotado</option></select></label>${field('Tiempo de elaboración', 'production_time', p?.production_time, 'maxlength="300"')}${check('Personalizable', 'customizable', p?.customizable)}${area('Opciones de personalización (una por línea)', 'customization_options', p?.customization_options.join('\n'))}${check('Producto destacado', 'featured', p?.featured)}` : ''}
+  ${type === 'products' ? `<label>Categoría<select name="category_id" required><option value="">Selecciona una categoría</option>${categories.map(category => `<option value="${category.id}" ${p?.category_id === category.id ? 'selected' : ''}>${e(category.name)}${category.active ? '' : ' (oculta)'}</option>`).join('')}</select></label>${field('Descripción corta', 'short_description', p?.short_description, 'required maxlength="500"')}${field('Precio en pesos colombianos (opcional)', 'price', p?.price ?? '', 'type="number" min="0" max="9999999999.99" step="0.01" aria-describedby="price-help"')}<p id="price-help">Déjalo vacío para recibir cotizaciones por WhatsApp. Si escribes un precio, se mostrará en el catálogo.</p>${check('Precio desde', 'price_from', p?.price_from)}${field('Moneda', 'currency', 'COP', 'readonly')}<label>Disponibilidad<select name="availability"><option value="available" ${p?.availability === 'available' ? 'selected' : ''}>Disponible</option><option value="made_to_order" ${!p || p.availability === 'made_to_order' ? 'selected' : ''}>Bajo pedido</option><option value="sold_out" ${p?.availability === 'sold_out' ? 'selected' : ''}>Agotado</option></select></label>${field('Tiempo de elaboración', 'production_time', p?.production_time, 'maxlength="300"')}${check('Personalizable', 'customizable', p?.customizable)}${area('Opciones de personalización (una por línea)', 'customization_options', p?.customization_options.join('\n'))}${check('Destacar producto', 'featured', p?.featured)}` : ''}
   <label>${type === 'products' ? 'Fotografías (máximo 12)' : 'Fotografía de categoría'}<input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp" ${type === 'products' ? 'multiple' : ''} /></label><p>JPEG, PNG o WebP, máximo 5 MB por archivo. Las imágenes grandes se reducen a 1600 píxeles y se comprimen cuando es posible. La primera será la principal. Los cambios se aplican al guardar.</p><div id="photo-list"></div>`;
   const name = form.elements.namedItem('name') as HTMLInputElement;
   const initialSection = c?.section || categories.find(category => category.id === p?.category_id)?.section || sectionFilter.value || 'navidad';
@@ -206,7 +213,7 @@ form.addEventListener('submit', async event => {
       const result = editing.existing ? await db.from('categories').update(payload).eq('id', editing.id).eq('updated_at', editing.updatedAt!).select('id') : await db.from('categories').insert({ ...payload, id: editing.id }).select('id');
       error = result.error; rows = result.data;
     } else {
-      const payload = { ...common, category_id: text('category_id'), short_description: text('short_description'), price, price_from: price !== null && data.has('price_from'), currency: 'COP', availability: text('availability'), production_time: text('production_time'), customizable: data.has('customizable'), customization_options: data.has('customizable') ? text('customization_options').split('\n').map(s => s.trim()).filter(Boolean) : [], featured: data.has('featured'), images: finalPhotos as unknown as Json };
+      const payload = { ...common, category_id: text('category_id'), short_description: text('short_description'), price, price_from: price !== null && data.has('price_from'), currency: 'COP', availability: text('availability'), production_time: text('production_time'), customizable: data.has('customizable'), customization_options: data.has('customizable') ? text('customization_options').split('\n').map(s => s.trim()).filter(Boolean) : [], featured: data.has('featured'), featured_order: pFeaturedOrder(editing.id, data.has('featured')), images: finalPhotos as unknown as Json };
       const result = editing.existing ? await db.from('products').update(payload).eq('id', editing.id).eq('updated_at', editing.updatedAt!).select('id') : await db.from('products').insert({ ...payload, id: editing.id }).select('id');
       error = result.error; rows = result.data;
     }
@@ -273,6 +280,26 @@ $('#admin-panel').addEventListener('click', async event => {
   } catch (error) { message(friendlyError(error)); }
   finally { busy = false; target.disabled = false; }
 });
+$('#featured-list').addEventListener('click', async event => {
+  const button = (event.target as Element).closest<HTMLButtonElement>('[data-featured-move], [data-featured-remove]');
+  if (!button || busy) return;
+  const row = products.find(p => p.id === button.dataset.id);
+  if (!row) return;
+  busy = true; button.disabled = true;
+  try {
+    if (!await requireAdmin()) { location.replace('/admin/login/'); return; }
+    const db = getSupabase();
+    if (button.hasAttribute('data-featured-remove')) {
+      const result = await db.from('products').update({ featured: false }).eq('id', row.id).eq('updated_at', row.updated_at).select('id');
+      if (result.error || !result.data.length) throw result.error || new Error('El producto cambió en otra sesión.');
+    } else {
+      const result = await db.rpc('move_featured_product', { product_id: row.id, direction: button.dataset.featuredMove === 'up' ? -1 : 1 });
+      if (result.error) throw result.error;
+    }
+    await refresh(); message('Destacados actualizados.');
+  } catch (error) { await refresh().catch(() => {}); message(friendlyError(error)); }
+  finally { busy = false; button.disabled = false; }
+});
 $('#cleanup').addEventListener('click', async () => {
   if (busy) return; busy = true;
   try {
@@ -295,13 +322,19 @@ async function init() {
   message('Comprobando acceso…');
   try {
     if (!await requireAdmin()) { location.replace('/admin/login/'); return; }
-    await refresh(); $('#admin-panel').hidden = false; $('#logout').hidden = false; message('Catálogo listo para administrar.');
+    await refresh(); void loadBanners(); $('#admin-panel').hidden = false; $('#admin-root').hidden = false; $('#admin-access-check').hidden = true; $('#logout').hidden = false; message('Catálogo listo para administrar.');
     const { data: { subscription } } = getSupabase().auth.onAuthStateChange(event => {
       if (event === 'SIGNED_OUT') { $('#admin-panel').hidden = true; dialog.close(); location.replace('/admin/login/'); }
     });
+    const verifySession = async () => {
+      if (!await requireAdmin()) { $('#admin-panel').hidden = true; dialog.close(); location.replace('/admin/login/'); }
+    };
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void verifySession(); });
+    window.setInterval(() => { if (document.visibilityState === 'visible') void verifySession(); }, 300000);
     window.addEventListener('pagehide', () => subscription.unsubscribe(), { once: true });
-  } catch { message('No pudimos cargar tu catálogo. Revisa tu conexión y vuelve a intentar. Si continúa, contacta a quien administra tu sitio.'); $('#retry-load').hidden = false; }
+  } catch { $('#admin-access-check p').textContent = 'No pudimos comprobar el acceso. Revisa tu conexión y vuelve a intentar.'; $('#retry-access').hidden = false; }
 }
 $('#retry-load').addEventListener('click', () => { void init(); });
+$('#retry-access').addEventListener('click', () => { $('#retry-access').hidden = true; void init(); });
 initCatalogContent();
 void init();

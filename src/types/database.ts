@@ -15,6 +15,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalog_banners: {
+        Row: { id: string; title: string; description: string; eyebrow: string; button_label: string; href: string; image_path: string | null; active: boolean; sort_order: number; created_at: string; updated_at: string }
+        Insert: { id?: string; title: string; description?: string; eyebrow?: string; button_label?: string; href?: string; image_path?: string | null; active?: boolean; sort_order?: number; created_at?: string; updated_at?: string }
+        Update: { title?: string; description?: string; eyebrow?: string; button_label?: string; href?: string; image_path?: string | null; active?: boolean; sort_order?: number; updated_at?: string }
+        Relationships: []
+      }
       catalog_section_settings: {
         Row: CatalogSettingsRow
         Insert: Partial<CatalogSettings> & { id?: 'catalog'; created_at?: string; updated_at?: string }
@@ -101,6 +107,7 @@ export type Database = {
           customization_options: string[]
           description: string
           featured: boolean
+          featured_order: number
           id: string
           images: Json
           name: string
@@ -122,6 +129,7 @@ export type Database = {
           customization_options?: string[]
           description?: string
           featured?: boolean
+          featured_order?: number
           id?: string
           images?: Json
           name: string
@@ -143,6 +151,7 @@ export type Database = {
           customization_options?: string[]
           description?: string
           featured?: boolean
+          featured_order?: number
           id?: string
           images?: Json
           name?: string
@@ -169,7 +178,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      move_featured_product: { Args: { product_id: string; direction: number }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

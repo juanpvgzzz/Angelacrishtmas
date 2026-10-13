@@ -4,6 +4,7 @@ import { setSearchCatalog, setSearchUnavailable } from './predictive-search';
 import { transitionContent } from './motion';
 import { mountCatalog, matchesGroup } from './catalog-filters';
 import { publicCatalog } from '../services/supabase/catalog';
+import { getSupabase } from '../services/supabase/client';
 import type { Product, Category, CatalogImage } from '../types/catalog';
 import { formatPrice, availabilityLabels } from '../utils/format';
 import { getWhatsAppUrl } from '../config/whatsapp';
@@ -13,15 +14,13 @@ import { sectionUrl, sectionName } from '../config/sections';
 export const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
 const e = escapeHtml;
 const pendingImage = '/images/brand/image-pending.svg';
-let catalogCategories: Category[] = [];
 const detailUrl = (p: Product) => `/producto/?slug=${encodeURIComponent(p.slug)}`;
 const categoryUrl = (c: Category) => `${sectionUrl(c.section || 'navidad')}?categoria=${encodeURIComponent(c.slug)}`;
 const icon = '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.7A8.5 8.5 0 1 1 20.5 11.5ZM8 7.5c0 4 4.5 8.5 8.5 8.5l1-2-3-1.5-1 1c-1.5-.5-2.5-1.5-3-3l1-1L10 6.5l-2 1Z"/></svg>';
-function whatsapp(p: Product) {
+function whatsapp(p: Product, label = 'Consultar por WhatsApp') {
   const image = p.images[0];
   const imageUrl = image ? new URL(image.src, window.location.origin).href : undefined;
   const url = getWhatsAppUrl(p.name, undefined, imageUrl);
-  const label = 'Cotizar por WhatsApp';
   return `<a class="button whatsapp-button button-primary whatsapp-solid" href="${e(url || '#contacto')}" ${url ? 'target="_blank" rel="noopener noreferrer"' : ''} aria-label="${label}: ${e(p.name)}">${icon}<span>${label}</span></a>`;
 }
 function renderPrice(p: Product, detail = false) {
@@ -32,9 +31,7 @@ function photo(image: CatalogImage | undefined, name: string, main = false) {
   return `<img ${main ? 'id="main-product-image" fetchpriority="high"' : 'loading="lazy"'} class="${!image || image.kind === 'placeholder' ? 'placeholder-image' : ''}" src="${e(image?.src || pendingImage)}" alt="${e(image?.alt || 'Fotografía pendiente: ' + name)}" width="600" height="720" decoding="async" />`;
 }
 function card(p: Product) {
-  const mark = p.featured ? 'Destacado' : p.customizable ? 'Personalizable' : '';
-  const star = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m12 3 3 6 6 1-4.5 4.5 1 6.5-5.5-3-5.5 3 1-6.5L3 10l6-1Z"/></svg>';
-  return `<article class="product-card"><div class="product-image">${photo(p.images[0], p.name)}<span class="card-quick-action" aria-hidden="true">Ver detalle <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></span>${mark ? `<span class="card-mark">${star}${mark}</span>` : ''}${!p.images[0] ? '<span class="image-caption">Fotografía pendiente</span>' : p.images[0].kind === 'placeholder' ? '<span class="image-caption">Imagen de muestra</span>' : ''}</div><div class="product-info"><p class="product-category">${e(catalogCategories.find(c => c.id === p.categoryId)?.name || '')}</p><h3><a class="product-detail-link" href="${detailUrl(p)}">${e(p.name)}</a></h3>${renderPrice(p)}<span class="availability availability-${p.availability}">${availabilityLabels[p.availability]}</span></div></article>`;
+  return `<article class="product-card"><a class="product-detail-link" href="${detailUrl(p)}"><div class="product-image">${photo(p.images[0], p.name)}</div><div class="product-info"><h3>${e(p.name)}</h3>${p.basePrice === null ? '' : renderPrice(p)}</div></a></article>`;
 }
 const grid = (products: Product[]) => products.length ? `<div class="product-grid">${products.map(card).join('')}</div>` : '<div class="empty-state"><h2>Nuevas creaciones en camino</h2><p>No hay productos disponibles en esta selección.</p></div>';
 const detailIcon = (path: string) => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}" /></svg>`;
@@ -50,7 +47,7 @@ function renderProduct(root: HTMLElement, products: Product[], categories: Categ
   document.title = `${p.name} | ${brand.name}`;
   for (const selector of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) document.querySelector(selector)?.setAttribute('content', document.title);
   for (const selector of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]']) document.querySelector(selector)?.setAttribute('content', p.shortDescription || brand.description);
-  root.innerHTML = `<nav class="breadcrumbs" aria-label="Ruta de navegación"><a href="/catalogo/">Catálogo</a><span aria-hidden="true">/</span><a href="${sectionUrl(category.section || 'navidad')}">${sectionName(category.section || 'navidad')}</a><span aria-hidden="true">/</span><a href="${categoryUrl(category)}">${e(category.name)}</a><span aria-hidden="true">/</span><span aria-current="page">${e(p.name)}</span></nav>
+  root.innerHTML = `<a class="detail-back" href="/catalogo/">← Volver al catálogo</a><nav class="breadcrumbs" aria-label="Ruta de navegación"><a href="/catalogo/">Catálogo</a><span aria-hidden="true">/</span><a href="${sectionUrl(category.section || 'navidad')}">${sectionName(category.section || 'navidad')}</a><span aria-hidden="true">/</span><a href="${categoryUrl(category)}">${e(category.name)}</a><span aria-hidden="true">/</span><span aria-current="page">${e(p.name)}</span></nav>
   <div class="product-detail"><div class="product-gallery"><div class="gallery-main">${photo(p.images[0], p.name, true)}<span class="image-caption" data-gallery-caption ${p.images[0]?.kind === 'photo' ? 'hidden' : ''}>Imagen de muestra</span></div><div class="gallery-thumbnails" role="group" aria-label="Imágenes del producto">${p.images.length > 1 ? p.images.map((im, index) => `<button type="button" data-image="${index}" aria-label="Ver imagen ${index + 1} de ${e(p.name)}" aria-pressed="${index === 0}">${photo(im, '')}</button>`).join('') : ''}</div></div>
   <section class="product-detail-copy" aria-labelledby="product-title"><p class="eyebrow">${e(category.name)}</p><h1 id="product-title">${e(p.name)}</h1><p class="detail-status">${needle}${availabilityLabels[p.availability]}</p>${renderPrice(p, true)}<p style="white-space:pre-line">${e(p.description)}</p><dl class="product-facts"><div><dt>Tiempo estimado de elaboración</dt><dd>${e(p.productionTime || 'Consultar')}</dd></div><div><dt>Un detalle a tu medida</dt><dd>${p.customizable ? e(p.customizationOptions.join(' · ') || 'Personalizable: consulta las opciones disponibles.') : 'Sin personalización.'}</dd></div></dl>${whatsapp(p)}<p class="detail-help">Acordamos contigo el valor final, la disponibilidad y los detalles antes de comenzar.</p><div class="detail-purchase">${heart}<p>${e(brand.purchase)}</p></div></section></div>
   <section class="related-section" aria-labelledby="related-title"><div class="section-heading"><h2 id="related-title">También te pueden enamorar</h2></div>${grid(products.filter(item => item.categoryId === p.categoryId && item.id !== p.id).slice(0, 4))}</section>`;
@@ -83,11 +80,11 @@ async function load() {
     const applySettings = () => {
     for (const [selector, value] of [['[data-catalog-eyebrow]', settings.eyebrow], ['#catalog-title', settings.title], ['[data-catalog-description]', settings.description]]) {
       const element = document.querySelector(selector);
-      if (element) element.textContent = value;
+      if (element && !(selector === '#catalog-title' && location.pathname === '/')) element.textContent = value;
     }
     };
     applySettings();
-    catalogCategories = categories;
+    renderHomeSections(categories, products);
     setSearchCatalog(products, categories);
     renderEditorial(categories, products);
     roots.forEach(root => {
@@ -124,6 +121,50 @@ async function load() {
 void load();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void load(); });
 window.addEventListener('pageshow', event => { if (event.persisted) void load(); });
+
+function renderHomeSections(categories: Category[], products: Product[]) {
+  const featuredRoot = document.querySelector<HTMLElement>('.featured-section');
+  const featured = products.filter(p => p.featured).sort((a, b) => (a.featuredOrder ?? a.order) - (b.featuredOrder ?? b.order) || a.id.localeCompare(b.id));
+  if (featuredRoot) {
+    featuredRoot.hidden = featured.length === 0;
+    if (featured.length) featuredRoot.querySelector('[data-featured-products]')!.innerHTML = grid(featured);
+  }
+  const categoriesRoot = document.querySelector<HTMLElement>('.collections-section');
+  if (categoriesRoot) {
+    const priorities = [/navid/, /flor/, /oso|peluche/];
+    const normalized = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const selected: Category[] = [];
+    const used = new Set<string>();
+    for (const pattern of priorities) {
+      const match = categories.find(c => !used.has(c.id) && pattern.test(normalized(c.name)));
+      if (match) { selected.push(match); used.add(match.id); }
+    }
+    for (const pattern of priorities) {
+      if (selected.some(c => pattern.test(normalized(c.name)))) continue;
+      const match = categories.find(c => !used.has(c.id) && pattern.test(normalized(c.slug)));
+      if (match) { selected.push(match); used.add(match.id); }
+    }
+    selected.push(...categories.filter(c => !used.has(c.id)));
+    categoriesRoot.hidden = selected.length === 0;
+    categoriesRoot.querySelector('[data-home-categories]')!.innerHTML = `<div class="home-category-grid">${selected.map(c => {
+      const image = c.image.kind === 'photo' ? c.image : products.find(p => p.categoryId === c.id)?.images.find(im => im.kind === 'photo') || c.image;
+      return `<a class="home-category" href="${categoryUrl(c)}">${photo(image, c.name)}<span>${e(c.name)}</span></a>`;
+    }).join('')}</div>`;
+  }
+  const carousel = document.querySelector<HTMLElement>('.banner-carousel');
+  if (carousel) void getSupabase().from('catalog_banners').select('*').eq('active', true).order('sort_order').order('id').then(({ data, error }) => {
+    if (error || !data) return;
+    carousel.hidden = data.length === 0;
+    const track = carousel.querySelector<HTMLElement>('.banner-track')!;
+    track.innerHTML = data.map((b, i) => {
+      const safeHref = /^\/(?:catalogo\/|producto\/|navidad\/|flores-eternas\/|osos-de-peluche\/|regalos-personalizados\/|munecas-de-trapo\/|categoria\/|#|$)/.test(b.href) ? b.href : '/catalogo/';
+      const src = b.image_path ? getSupabase().storage.from('product-images').getPublicUrl(b.image_path).data.publicUrl : '';
+      return `<article class="catalog-banner" data-managed-banner aria-label="${i + 1} de ${data.length}: ${e(b.title)}"><div class="banner-copy"><p class="eyebrow">${e(b.eyebrow)}</p><h2>${e(b.title)}</h2><p class="banner-description">${e(b.description)}</p><a class="text-link" href="${e(safeHref)}">${e(b.button_label)} <span aria-hidden="true">↗</span></a></div><div class="banner-visual">${src ? `<img src="${e(src)}" alt="${e(b.title)}" width="600" height="600" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} decoding="async" />` : '<div class="banner-monogram" aria-hidden="true">Á</div>'}</div></article>`;
+    }).join('');
+    carousel.querySelector('.banner-pagination')!.innerHTML = data.map((b, i) => `<button type="button" data-banner-page="${i}" aria-label="Mostrar banner: ${e(b.title)}" aria-pressed="${i === 0}"><span></span></button>`).join('');
+    window.dispatchEvent(new Event('banners:rendered'));
+  });
+}
 
 // Las fotografías de portada y la colección de temporada siguen los destacados
 // y su orden existentes; no requieren configuración ni esquema adicionales.

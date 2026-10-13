@@ -1,5 +1,5 @@
 ---
-interface Props { name: 'search' | 'star' | 'arrow' | 'whatsapp' | 'menu' | 'heart' | 'needle' | 'lock' | 'check'; size?: number; }
+interface Props { name: 'search' | 'star' | 'arrow' | 'whatsapp' | 'menu' | 'heart' | 'needle' | 'lock' | 'check' | 'home' | 'categories' | 'catalog'; size?: number; }
 const { name, size = 22 } = Astro.props;
 const paths = {
   search: 'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z',
@@ -11,6 +11,9 @@ const paths = {
   needle: 'm4 20 13-17c3-2 5 0 3 3L4 20Zm12-12 3-3M5 4c-4 0-4 6 0 6h3c6 0 2 8 8 8h4',
   lock: 'M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5V10Zm7 4v3',
   check: 'm5 12 4 4L19 6',
+  home: 'm3 10 9-7 9 7v10H3V10Zm6 10v-7h6v7',
+  categories: 'M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z',
+  catalog: 'M4 5h16v14H4V5Zm4 0v14m4-14v14m4-14v14',
 };
 ---
 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={paths[name]} /></svg>

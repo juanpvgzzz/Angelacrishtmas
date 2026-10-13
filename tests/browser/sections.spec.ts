@@ -9,7 +9,7 @@ test('secciones independientes, enlaces de categoria y ficha', async ({ page }) 
   for (const width of [320, 390, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/munecas-de-trapo/');
-    await expect(page.locator('.product-card')).toHaveCount(dolls.length);
+    await expect(page.locator('[data-results] .product-card')).toHaveCount(dolls.length);
     await expect(page.locator('.section-tabs [aria-current]')).toHaveText('Muñecas de trapo');
     await expect(page.locator('.catalog-refinements select option')).toHaveCount(2);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -21,17 +21,17 @@ test('secciones independientes, enlaces de categoria y ficha', async ({ page }) 
     await page.screenshot({ path: `test-results/sections-dolls-${width}.png`, fullPage: true });
   }
   await page.setViewportSize({ width: 390, height: 850 });
-  await page.getByLabel('Categoría', { exact: true }).selectOption(state.categories[0].slug);
+  await page.locator(`[data-group="${state.categories[0].slug}"]`).click();
   await expect(page).toHaveURL(/munecas-de-trapo\/\?categoria=/);
-  await page.locator('.product-detail-link').first().click();
-  await expect(page.locator('[data-live-product] .breadcrumbs').getByRole('link', { name: 'Muñecas de trapo', exact: true })).toHaveAttribute('href', '/munecas-de-trapo/');
+  await page.locator('[data-results] .product-detail-link').first().click();
+  await expect(page.locator('[data-live-product] .breadcrumbs a').filter({ hasText: 'Muñecas de trapo' })).toHaveAttribute('href', '/munecas-de-trapo/');
   await page.goto('/navidad/');
-  await expect(page.locator('.product-card')).toHaveCount(state.products.length - dolls.length);
+  await expect(page.locator('[data-results] .product-card')).toHaveCount(state.products.length - dolls.length);
   await page.goto('/navidad/?categoria=' + state.categories[0].slug);
-  await expect(page.locator('.product-card')).toHaveCount(state.products.length - dolls.length);
+  await expect(page.locator('[data-results] .product-card')).toHaveCount(state.products.length - dolls.length);
   await expect(page).not.toHaveURL(/categoria=/);
   await page.goto('/catalogo/');
-  await expect(page.locator('.product-card')).toHaveCount(state.products.length);
+  await expect(page.locator('[data-results] .product-card')).toHaveCount(state.products.length);
 });
 
 test('administrar munecas con fotos y cambiar un producto de seccion', async ({ page }) => {

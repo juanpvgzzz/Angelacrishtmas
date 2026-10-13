@@ -72,7 +72,7 @@ export function mountCatalog(root: HTMLElement, products: Product[], categories:
   if (previousHandler) root.removeEventListener('catalog:query', previousHandler);
   const queryHandler: EventListener = event => {
     query = (event as CustomEvent<{query:string}>).detail.query;
-    category='';select.value='';personal.checked=false;render();
+    render();
   };
   queryHandlers.set(root, queryHandler);
   root.addEventListener('catalog:query', queryHandler);

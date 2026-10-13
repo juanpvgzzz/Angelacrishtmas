@@ -1,8 +1,6 @@
 # Administración de ÁMELA
 
-Estado actualizado: el proyecto `pwadncqwmfapexzjjcju` ya esta activo y conectado.
-Las cuatro migraciones de `supabase/migrations/` ya estan aplicadas, incluido
-el precio opcional. La primera cuenta administradora ya existe.
+Estado verificado el 12 de octubre de 2026: el proyecto Supabase está conectado y las lecturas públicas de categorías y productos responden. Sin embargo, la API devuelve `PGRST205` para `catalog_section_settings` y `catalog_banners`, y `products` todavía no tiene `featured_order`. Faltan las migraciones locales `20260927231935_catalog_section_settings.sql` y `20261012000000_featured_banners.sql` en el proyecto remoto. No se ejecutó ningún cambio en producción. La primera cuenta administradora ya existe según la configuración anterior.
 No crear otro proyecto ni repetir la instalacion. Para entrar
 y agregar productos, seguir [ACCESO_CATALOGO.md](ACCESO_CATALOGO.md).
 Las instrucciones de creacion siguientes corresponden a la instalacion inicial.
@@ -27,6 +25,8 @@ Los ejemplos anteriores son marcadores, no credenciales. No colocar una clave `s
 Las variables existentes `PUBLIC_WHATSAPP_NUMBER` y `PUBLIC_SITE_URL` son opcionales. Para WhatsApp usar el número real internacional, solo dígitos. Configurar estas variables exige reiniciar Astro y, cuando se publique inicialmente, compilar con ellas. **Editar categorías, productos o fotografías no requiere recompilar.**
 
 ## Aplicar la migración
+
+En la instalación existente, verificar primero el historial de migraciones del proyecto correcto y aplicar, en este orden, `20260927231935_catalog_section_settings.sql` y `20261012000000_featured_banners.sql` si siguen pendientes. Revisar el destino y hacer una copia de seguridad antes de aplicar cambios remotos. La segunda conserva productos y categorías, agrega `featured_order`, admite secciones para flores, osos y regalos, crea `catalog_banners` con tres campañas iniciales y extiende las políticas de imágenes. No ejecutar archivos dos veces manualmente. Antes de aplicarlas, el catálogo público usa los textos predeterminados y oculta campañas, mientras que el panel no puede guardar configuración ni banners y el orden nuevo de destacados no persiste.
 
 Para una instalacion nueva, aplicar los archivos de `supabase/migrations/` en orden de nombre, comenzando por `20260909000651_catalog_admin.sql`. En el proyecto conectado ya estan aplicados: no repetirlos. Si se usa el CLI, consultar su `--help`, enlazar el proyecto y ejecutar las migraciones; no introducir la contraseña de la base de datos en comandos que queden registrados.
 
@@ -71,6 +71,18 @@ on conflict (user_id) do nothing;
 Para retirar autorización, eliminar exclusivamente la membresía elegida desde Dashboard. Las políticas vuelven a consultar la tabla en cada operación, de modo que la autorización no depende de un claim antiguo.
 
 ## Uso del panel
+
+Para destacar una creación, abrir **Productos → Editar**, marcar **Destacar producto** y guardar. En **Creaciones destacadas** usar **Subir/Bajar** para cambiar el orden o **Quitar destacado** para retirarla; esto no elimina el producto. La portada oculta la sección cuando no hay destacados visibles.
+
+En **Categorías** se crea o edita el nombre, fotografía, sección, orden y visibilidad. Usar las secciones **Flores eternas** y **Osos de peluche** para sus respectivas categorías; no crear categorías con el mismo slug. La portada muestra las categorías activas pertinentes y enlaza a sus productos. Una categoría sin registro activo no se inventa automáticamente.
+
+En **Banners** se puede crear una campaña, cambiar título, texto, enlace interno, fotografía, estado y orden. Un banner inactivo no aparece; eliminarlo pide confirmación. El enlace debe comenzar por una ruta pública del catálogo. Las tres campañas actuales quedan registradas por la migración y pueden editarse. Las fotografías reemplazadas se añaden a la cola de limpieza; usar **Mantenimiento de fotografías** para retirar archivos huérfanos de más de una hora.
+
+En **Productos** se administran descripción, precio opcional, disponibilidad, personalización, categoría, visibilidad y hasta doce fotografías. Un precio vacío se presenta como «Precio a cotizar».
+
+### Límite de la arquitectura estática
+
+Astro genera `/admin/` como HTML estático. El panel permanece oculto mientras el navegador verifica la sesión y redirige al acceso cuando no hay autorización; la protección efectiva de los datos y las escrituras está en RLS de Supabase y Storage. Para denegar también la entrega HTTP de ese HTML antes de ejecutar JavaScript haría falta incorporar un servidor o control de acceso en el alojamiento. No se incluyó porque el proyecto actual es estático y el HTML administrativo no contiene datos privados. Las fichas creadas después del build usan `/producto/?slug=...`; para SEO con metadatos individuales servidos al rastreador haría falta renderizado en servidor o regenerar páginas al publicar productos.
 
 El panel muestra resumen y listas. Crear primero categorías y después productos. La visibilidad empieza desactivada para evitar publicaciones accidentales. Si una categoría se oculta, sus productos dejan de aparecer públicamente aunque estén activos individualmente.
 

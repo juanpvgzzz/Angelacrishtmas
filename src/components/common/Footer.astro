@@ -3,7 +3,9 @@ import Brand from './Brand.astro';
 import WhatsAppButton from './WhatsAppButton.astro';
 import { brand } from '../../config/brand';
 import { getWhatsAppUrl } from '../../config/whatsapp';
+import Icon from './Icon.astro';
 const isAdmin = Astro.url.pathname.startsWith('/admin');
+const isHome = Astro.url.pathname === '/';
 ---
 <footer class="site-footer" id="contacto" tabindex="-1">
   <div class="container footer-grid">
@@ -14,8 +16,25 @@ const isAdmin = Astro.url.pathname.startsWith('/admin');
   </div>
   <div class="container footer-bottom"><span>© <span data-current-year>{new Date().getFullYear()}</span> ÁMELA · Piezas hechas a mano, con variaciones que las hacen únicas.</span><a href="/admin/">Administración</a></div>
 </footer>
+{!isAdmin && <nav class="mobile-bottom-nav" aria-label="Navegación inferior">
+  <a href="/" aria-current={isHome ? 'page' : undefined}><Icon name="home" size={21} /><span>Inicio</span></a>
+  <a href="/#colecciones"><Icon name="categories" size={21} /><span>Categorías</span></a>
+  <a href="/catalogo/#creaciones" aria-current={!isHome ? 'page' : undefined}><Icon name="catalog" size={21} /><span>Catálogo</span></a>
+  <a href={getWhatsAppUrl() || '/#contacto'} target={getWhatsAppUrl() ? '_blank' : undefined} rel={getWhatsAppUrl() ? 'noopener noreferrer' : undefined}><Icon name="whatsapp" size={21} /><span>WhatsApp</span></a>
+</nav>}
 {!isAdmin && <div class="mobile-quote"><WhatsAppButton label="Cotizar por WhatsApp" /></div>}
 <script>
  import '../../scripts/public-catalog';
  document.querySelectorAll('[data-current-year]').forEach(node => { node.textContent = String(new Date().getFullYear()); });
+ const bottomNav = document.querySelector<HTMLElement>('.mobile-bottom-nav');
+ const updateBottomNav = () => {
+   if (!bottomNav) return;
+   const current = location.pathname !== '/' ? '/catalogo/' : location.hash === '#colecciones' ? '/#colecciones' : location.hash === '#creaciones' ? '/catalogo/' : '/';
+   bottomNav.querySelectorAll<HTMLAnchorElement>('a').forEach(link => {
+     if (link.getAttribute('href') === current || (current === '/catalogo/' && link.getAttribute('href') === '/catalogo/#creaciones')) link.setAttribute('aria-current', 'page');
+     else link.removeAttribute('aria-current');
+   });
+ };
+ updateBottomNav();
+ window.addEventListener('hashchange', updateBottomNav);
 </script>

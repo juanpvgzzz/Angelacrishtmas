@@ -45,14 +45,15 @@ test('categorías dinámicas, orden, sincronización responsive, combinación y 
   await expect(page.locator('.category-select select')).toHaveValue(state.categories[0].slug);
   await page.getByLabel('Solo personalizables').check();
   const expected = state.products.filter(p => p.active && p.customizable && p.category_id === state.categories[0].id).length;
-  await expect(page.locator('.product-card')).toHaveCount(expected);
+  await expect(page.locator('[data-results] .product-card')).toHaveCount(expected);
   await page.setViewportSize({ width: 390, height: 850 });
-  await expect(page.locator('.catalog-groups')).toBeHidden();
-  await page.getByLabel('Categoría', { exact: true }).selectOption(state.categories[1].slug);
+  await expect(page.locator('.catalog-groups')).toBeVisible();
+  await expect(page.locator('.category-select')).toBeHidden();
+  await page.locator(`[data-group="${state.categories[1].slug}"]`).click();
   await expect(page.locator(`[data-group="${state.categories[1].slug}"]`)).toHaveAttribute('aria-pressed', 'true');
-  await page.getByLabel('Categoría', { exact: true }).selectOption('');
+  await page.locator('[data-group=""]').click();
   await expect(page.locator('[data-group=""]')).toHaveAttribute('aria-pressed', 'true');
-  await page.getByLabel('Categoría', { exact: true }).selectOption(state.categories[1].slug);
+  await page.locator(`[data-group="${state.categories[1].slug}"]`).click();
   state.categories[1].active = false;
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.locator('.category-select select')).toHaveValue('');
@@ -65,10 +66,10 @@ test('respaldo sin registro o error de configuración conserva productos', async
   state.catalog_section_settings.length = 0;
   await page.goto('/catalogo/');
   await expect(page.locator('#catalog-title')).toHaveText('Encuentra tu detalle');
-  await expect(page.locator('.product-card')).toHaveCount(6);
+  await expect(page.locator('[data-results] .product-card')).toHaveCount(6);
   await page.route('**/rest/v1/catalog_section_settings*', route => route.fulfill({ status: 503, body: '{}' }));
   await page.reload();
-  await expect(page.locator('.product-card')).toHaveCount(6);
+  await expect(page.locator('[data-results] .product-card')).toHaveCount(6);
   await expect(page.locator('#catalog-title')).toHaveText('Encuentra tu detalle');
 });
 
@@ -100,11 +101,11 @@ test('cada combinación de visibilidad respeta celular y escritorio', async ({ p
   for (const [buttons, select] of [[true, true], [true, false], [false, true], [false, false]]) {
     Object.assign(state.catalog_section_settings[0], { show_category_buttons: buttons, show_category_select: select });
     await page.goto('/catalogo/');
-    await expect(page.locator('.product-card')).toHaveCount(6);
+    await expect(page.locator('[data-results] .product-card')).toHaveCount(6);
     for (const width of [320, 1440]) {
       await page.setViewportSize({ width, height: 850 });
-      await expect(page.locator('.catalog-groups')).toBeVisible({ visible: buttons && (!select || width >= 768) });
-      await expect(page.locator('.category-select')).toBeVisible({ visible: select && (!buttons || width < 768) });
+      await expect(page.locator('.catalog-groups')).toBeVisible({ visible: buttons });
+      await expect(page.locator('.category-select')).toBeVisible({ visible: select && !buttons });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
   }

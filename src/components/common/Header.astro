@@ -7,7 +7,7 @@ const links = [['/catalogo/', 'Catálogo'], ['/catalogo/?grupo=flores', 'Flores 
 <header class="site-header">
   <div class="container header-inner">
     <Brand />
-    <form class="header-search search-field" action="/catalogo/" role="search" aria-label="Buscar productos en ÁMELA"><Icon name="search" /><input type="search" name="q" aria-label="Buscar productos" placeholder="Busca flores, muñecas, adornos…" data-catalog-search autocomplete="off" /></form>
+    <form class="header-search search-field" action="/catalogo/" role="search" aria-label="Buscar productos en ÁMELA"><Icon name="search" size={18} /><input type="search" name="q" aria-label="Buscar productos" placeholder="Buscar creaciones..." data-catalog-search autocomplete="off" /></form>
     <a class="header-search-toggle" href="/catalogo/#creaciones" aria-label="Buscar en el catálogo"><Icon name="search" /></a>
     <nav class="desktop-nav" aria-label="Navegación principal">{links.map(([href, label]) => <a href={href} aria-current={href === Astro.url.pathname ? 'page' : undefined}>{label}</a>)}</nav>
     <WhatsAppButton label="WhatsApp" variant="compact" />

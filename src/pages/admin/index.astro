@@ -5,13 +5,16 @@ import Icon from '../../components/common/Icon.astro';
 import { sections } from '../../config/sections';
 ---
 <AdminLayout title="Administración">
-<div class="admin-shell" id="admin-root">
+<div id="admin-access-check"><p role="status">Comprobando acceso administrativo…</p><button class="button button-outline" id="retry-access" type="button" hidden>Volver a intentar</button></div>
+<div class="admin-shell" id="admin-root" hidden>
   <aside class="admin-sidebar" aria-label="Administración">
     <a class="admin-brand" href="/admin/">ÁMELA<span>MI TALLER · ADMINISTRACIÓN</span></a>
     <p class="nav-caption">TU ESPACIO DE TRABAJO</p>
     <nav aria-label="Navegación del panel">
       <a href="#products-title" aria-current="location"><Icon name="heart" size={20} /> Productos</a>
+      <a href="#featured-title"><Icon name="heart" size={20} /> Destacados</a>
       <a href="#categories-title"><Icon name="menu" size={20} /> Categorías</a>
+      <a href="#banners-title"><Icon name="menu" size={20} /> Banners</a>
       <a href="#catalog-content-title"><Icon name="menu" size={20} /> Contenido del catálogo</a>
       <a href="#maintenance"><Icon name="check" size={20} /> Mantenimiento</a>
     </nav>
@@ -37,7 +40,9 @@ import { sections } from '../../config/sections';
           <div id="product-list" class="admin-list"></div>
           <nav class="admin-pagination" aria-label="Páginas de productos"><button class="button button-outline" id="previous-page" type="button">Anterior</button><span id="page-info"></span><button class="button button-outline" id="next-page" type="button">Siguiente</button></nav>
         </section>
+        <section class="admin-section" aria-labelledby="featured-title"><div class="section-toolbar"><div><h2 id="featured-title">Creaciones destacadas</h2><p>Marca productos desde su edición y usa las flechas para ordenar su aparición en el inicio.</p></div></div><div id="featured-list" class="admin-list"></div></section>
         <section class="admin-section" aria-labelledby="categories-title"><div class="section-toolbar"><div><h2 id="categories-title" tabindex="-1">Categorías</h2><p>Agrupa tus creaciones para que sea fácil encontrarlas.</p></div><button class="button button-outline" id="new-category" type="button">Crear categoría</button></div><div id="category-list" class="admin-list category-grid"></div></section>
+        <section class="admin-section" aria-labelledby="banners-title"><div class="section-toolbar"><div><h2 id="banners-title">Banners</h2><p>Administra las campañas del carrusel principal.</p></div><button class="button button-outline" id="new-banner" type="button">Crear banner</button></div><div id="banner-list" class="admin-list"></div></section>
         <details id="maintenance" class="admin-maintenance"><summary>Mantenimiento de fotografías</summary><p>Libera espacio eliminando cargas interrumpidas de hace más de una hora. Las fotografías que usa el catálogo se conservan.</p><button class="button button-outline" id="cleanup" type="button">Limpiar fotografías sin uso</button></details>
         <footer class="admin-footer"><span>ÁMELA · Tu taller digital</span><span>Los productos nuevos se guardan ocultos hasta que decidas mostrarlos.</span></footer>
       </div>
@@ -45,5 +50,6 @@ import { sections } from '../../config/sections';
   </main>
 </div>
 <dialog id="editor" aria-labelledby="editor-title"><form id="catalog-form"><header class="editor-heading"><p class="eyebrow">CUIDA CADA DETALLE</p><h2 id="editor-title"></h2><p>Completa la información y revisa las fotografías antes de guardar.</p></header><fieldset id="editor-fields"></fieldset><p id="editor-status" role="status" aria-live="polite"></p><progress id="upload-progress" max="100" value="0" aria-label="Progreso de las fotografías" hidden></progress><div class="admin-actions editor-footer"><button class="button button-outline" id="cancel-edit" type="button">Cancelar</button><button class="button button-primary" type="submit">Guardar cambios</button></div></form></dialog>
+<dialog id="banner-editor" aria-labelledby="banner-editor-title"><form id="banner-form"><h2 id="banner-editor-title">Banner</h2><fieldset><label>Título<input name="title" required maxlength="160" /></label><label>Texto superior<input name="eyebrow" maxlength="120" /></label><label>Descripción<textarea name="description" maxlength="400" rows="3"></textarea></label><label>Texto del enlace<input name="button_label" required maxlength="80" /></label><label>Enlace interno<input name="href" required maxlength="500" placeholder="/catalogo/?categoria=flores" /></label><label>Orden<input name="sort_order" type="number" min="0" max="2147483647" required /></label><label><input name="active" type="checkbox" /> Activo</label><label>Fotografía<input name="image" type="file" accept="image/jpeg,image/png,image/webp" /></label><p id="banner-image-status"></p></fieldset><p id="banner-status" role="status" aria-live="polite"></p><div class="admin-actions"><button class="button button-outline" id="cancel-banner" type="button">Cancelar</button><button class="button button-primary" type="submit">Guardar banner</button></div></form></dialog>
 </AdminLayout>
 <script>import '../../scripts/admin';</script>

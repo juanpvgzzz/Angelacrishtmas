@@ -5,16 +5,16 @@ import { mockSupabase, login } from './supabase-fixture';
 test('catálogo, galería, filtros, ficha nueva y WhatsApp', async ({ page }) => {
   const state = await mockSupabase(page);
   await page.goto('/catalogo/');
-  await expect(page.locator('.product-card')).toHaveCount(6);
+  await expect(page.locator('[data-results] .product-card')).toHaveCount(6);
   const imageUrl = new URL(state.products[0].images[0].path, 'http://127.0.0.1:4322').href;
   const expectedQuote = 'https://wa.me/573046583246?text=' + encodeURIComponent('Hola, quiero cotizar el producto Papá Noel de Navidad de ÁMELA. Quisiera conocer su precio, disponibilidad y opciones de personalización.\n\nFoto del producto: ' + imageUrl);
-  await page.locator('.product-card').first().locator('.product-detail-link').click();
+  await page.locator('[data-results] .product-card').first().locator('.product-detail-link').click();
   await expect(page).toHaveURL(/producto\/\?slug=papa-noel/);
   await expect(page.getByRole('heading', { name: 'Papá Noel de Navidad', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Ver imagen 2' }).click();
   await expect(page.locator('#main-product-image')).toHaveAttribute('src', '/images/placeholders/santa-detail.svg');
   await expect(page.locator('.detail-purchase')).toContainText('50%');
-  await expect(page.locator('.product-detail-copy').getByRole('link', { name: 'Cotizar por WhatsApp: Papá Noel de Navidad', exact: true })).toHaveAttribute('href', expectedQuote);
+  await expect(page.locator('.product-detail-copy').getByRole('link', { name: 'Consultar por WhatsApp: Papá Noel de Navidad', exact: true })).toHaveAttribute('href', expectedQuote);
   state.products[0].slug = 'producto-nuevo-sin-build';
   await page.goto('/producto/?slug=producto-nuevo-sin-build');
   await expect(page.locator('#product-title')).toHaveText('Papá Noel de Navidad');
@@ -39,7 +39,7 @@ test('fallos de conexión no publican el respaldo de demostración', async ({ pa
   await page.route('https://catalog-test.supabase.co/**', route => route.abort());
   await page.goto('/catalogo/');
   await expect(page.getByRole('alert')).toContainText('No pudimos cargar', { timeout: 15000 });
-  await expect(page.locator('.product-card')).toHaveCount(0);
+  await expect(page.locator('[data-results] .product-card')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Volver a intentar' })).toBeVisible();
 });
 
@@ -59,7 +59,7 @@ test('administradora crea, edita, oculta y elimina categorías', async ({ page }
   await page.getByRole('button', { name: 'Crear categoría', exact: true }).click();
   await page.getByLabel('Nombre', { exact: true }).fill('Categoría de prueba');
   await expect(page.getByLabel('Slug', { exact: true })).toHaveValue('categoria-de-prueba');
-  await page.getByLabel('Orden', { exact: true }).fill('20');
+  await page.locator('#editor').getByLabel('Orden', { exact: true }).fill('20');
   await page.getByRole('button', { name: 'Guardar cambios' }).click();
   const row = page.locator('#category-list .admin-row').filter({ hasText: 'Categoría de prueba' });
   await expect(row).toContainText('Oculto');
@@ -129,7 +129,7 @@ test('escritorio y celular: accesibilidad, consola, diseño y recursos originale
     await page.setViewportSize({ width, height: 900 });
     for (const path of ['/', '/catalogo/', '/producto/?slug=papa-noel-de-navidad', '/admin/login/']) {
       await page.goto(path);
-      if (!path.includes('admin')) await expect(page.locator('.product-card').first()).toBeVisible();
+      if (!path.includes('admin')) await expect(page.locator(path.includes('/producto/') ? '.related-section .product-card' : '[data-results] .product-card').first()).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), path + ' ' + width).toBe(true);
       if (width === 390) {
       // Audit settled colors, rather than an intermediate frame of a fade.

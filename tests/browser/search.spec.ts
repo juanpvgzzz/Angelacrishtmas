@@ -12,7 +12,7 @@ async function prepare(page: import('@playwright/test').Page) {
 }
 for(const width of [375,768,1440]) test(`búsqueda predictiva ${width}: sugerencias, teclado y resultados`,async({page})=>{
  await prepare(page);await page.setViewportSize({width,height:900});await page.goto('/');
- await expect(page.locator('.product-card')).toHaveCount(6);
+ await expect(page.locator('[data-results] .product-card')).toHaveCount(6);
  await page.locator('[data-catalog-search]:visible').click();
  const field=width<768?page.locator('[data-search-dialog-input]'):page.locator('[data-catalog-search]:visible');
  if(width<768){await expect(page.getByRole('dialog')).toBeVisible();await expect(field).toBeFocused();}
@@ -33,16 +33,16 @@ for(const width of [375,768,1440]) test(`búsqueda predictiva ${width}: sugerenc
  await page.goto('/');await page.locator('[data-catalog-search]:visible').click();
  await field.fill('flor');await field.press('Enter');
  await expect(page).toHaveURL(/q=flor/);
- await expect(page.locator('.product-card').first()).toContainText('Rosa eterna');
+ await expect(page.locator('[data-results] .product-card').first()).toContainText('Rosa eterna');
  await expect(page.locator('#search-suggestions')).toBeHidden();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 
 test('modal móvil: cierre, foco, sin resultados y WhatsApp discreto',async({page})=>{
  await prepare(page);await page.setViewportSize({width:375,height:850});await page.goto('/');
- const cta=page.locator('.mobile-quote');
- expect((await cta.boundingBox())!.width).toBeLessThan(260);
- await page.locator('.header-search-toggle').click();
+ const cta=page.locator('.mobile-bottom-nav a').filter({hasText:'WhatsApp'});
+ await expect(cta).toBeVisible();
+ await page.locator('.mobile-search [data-catalog-search]').click();
  const field=page.locator('[data-search-dialog-input]');
  await expect(field).toBeFocused();await field.fill('zzzxsincoincidencias');
  await expect(page.locator('[data-search-empty]')).toContainText('¿Quieres crear algo personalizado?');
@@ -50,7 +50,7 @@ test('modal móvil: cierre, foco, sin resultados y WhatsApp discreto',async({pag
  await expect.poll(()=>page.evaluate(()=>document.getAnimations().length)).toBe(0);
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze()).violations).toEqual([]);
  await field.press('Escape');await expect(page.getByRole('dialog')).toBeHidden();
- await expect(page.locator('.header-search-toggle')).toBeFocused();
+ await expect(page.locator('.mobile-search [data-catalog-search]')).toBeFocused();
  await expect(cta).toBeVisible();
 });
 

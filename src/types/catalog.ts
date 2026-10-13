@@ -37,6 +37,7 @@ export interface Product {
   productionTime: string;
   customizationOptions: string[];
   featured: boolean;
+  featuredOrder?: number;
   active: boolean;
   order: number;
   /** Fecha ISO 8601. */

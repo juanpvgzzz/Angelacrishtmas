@@ -59,7 +59,7 @@ function discover() {
     if (preference.matches || !observer) return;
     const siblings = element.classList.contains('product-card') ? Array.from(element.parentElement!.children) : [];
     element.dataset.motionDelay = String((Math.max(0, siblings.indexOf(element)) % 4) * 55);
-    element.classList.add('motion-pending');
+    // El contenido permanece visible antes de entrar al viewport; el efecto es decorativo.
     pending.add(element);
     observer.observe(element);
   });

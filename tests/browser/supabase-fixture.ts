@@ -7,7 +7,12 @@ export async function mockSupabase(page: Page, admin = true) {
   const state = {
     catalog_section_settings: [{ ...catalogDefaults, id: 'catalog', created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-01T00:00:00Z' }],
     categories: demoCategories.map((c, i) => ({ id: id(i + 1), section: 'navidad', name: c.name, slug: c.slug, description: c.description, image_path: c.image.src, active: c.active, sort_order: c.order, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-01T00:00:00Z' })),
-    products: demoProducts.map((p, i) => ({ id: id(i + 101), category_id: id(demoCategories.findIndex(c => c.id === p.categoryId) + 1), name: p.name, slug: p.slug, short_description: p.shortDescription, description: p.description, price: p.basePrice, price_from: p.priceFrom, currency: 'COP', availability: p.availability === 'under-order' ? 'made_to_order' : p.availability === 'unavailable' ? 'sold_out' : 'available', production_time: p.productionTime, customizable: true, customization_options: p.customizationOptions, active: p.active, featured: p.featured, sort_order: p.order, images: p.images.map(({ src, ...image }) => ({ ...image, path: src })), created_at: p.createdAt, updated_at: p.createdAt })),
+    products: demoProducts.map((p, i) => ({ id: id(i + 101), category_id: id(demoCategories.findIndex(c => c.id === p.categoryId) + 1), name: p.name, slug: p.slug, short_description: p.shortDescription, description: p.description, price: p.basePrice, price_from: p.priceFrom, currency: 'COP', availability: p.availability === 'under-order' ? 'made_to_order' : p.availability === 'unavailable' ? 'sold_out' : 'available', production_time: p.productionTime, customizable: true, customization_options: p.customizationOptions, active: p.active, featured: p.featured, featured_order: p.order, sort_order: p.order, images: p.images.map(({ src, ...image }) => ({ ...image, path: src })), created_at: p.createdAt, updated_at: p.createdAt })),
+    catalog_banners: [
+      { id: id(301), title: 'Flores para siempre.', eyebrow: 'DETALLES QUE PERDURAN', description: 'Un gesto que florece.', button_label: 'Explorar flores', href: '/catalogo/?grupo=flores#creaciones', image_path: null as string | null, active: true, sort_order: 0, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-01T00:00:00Z' },
+      { id: id(302), title: 'Tu idea, nuestras manos.', eyebrow: 'TAN ESPECIAL COMO TÚ', description: 'Detalles que cuentan tu historia.', button_label: 'Ver personalizables', href: '/catalogo/?grupo=personalizados#creaciones', image_path: null as string | null, active: true, sort_order: 1, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-01T00:00:00Z' },
+      { id: id(303), title: 'Una Navidad muy tuya.', eyebrow: 'LA MAGIA DE LOS DETALLES', description: 'Piezas para celebrar.', button_label: 'Descubrir Navidad', href: '/catalogo/?grupo=navidad#creaciones', image_path: null as string | null, active: true, sort_order: 2, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-09-01T00:00:00Z' },
+    ],
     image_cleanup: [] as { path: string; created_at: string }[], uploads: [] as string[], removed: [] as string[], failSave: false,
   };
   const user = { id: id(999), aud: 'authenticated', role: 'authenticated', email: 'admin@example.test', app_metadata: {}, user_metadata: {}, created_at: '2026-09-01T00:00:00Z' };
@@ -24,11 +29,19 @@ export async function mockSupabase(page: Page, admin = true) {
       if (method === 'DELETE') { state.removed.push(...request.postDataJSON().prefixes); return reply([]); }
       state.uploads.push(url.pathname.split('/product-images/')[1]); return reply({ Key: url.pathname, Id: id(800) });
     }
+    if (url.pathname.includes('/rest/v1/rpc/move_featured_product')) {
+      const { product_id, direction } = request.postDataJSON();
+      const featured = state.products.filter(p => p.featured).sort((a, b) => a.featured_order - b.featured_order);
+      const index = featured.findIndex(p => p.id === product_id);
+      const other = featured[index + direction];
+      if (index >= 0 && other) { const old = featured[index].featured_order; featured[index].featured_order = other.featured_order; other.featured_order = old; }
+      return reply(null);
+    }
     const table = url.pathname.split('/rest/v1/')[1];
     if (table === 'admin_users') return reply(admin ? { user_id: user.id } : null);
-    if (!['categories', 'products', 'image_cleanup', 'catalog_section_settings'].includes(table)) return reply({ message: 'Unexpected fixture request' }, 400);
+    if (!['categories', 'products', 'image_cleanup', 'catalog_section_settings', 'catalog_banners'].includes(table)) return reply({ message: 'Unexpected fixture request' }, 400);
     // Mutable fixtures verify UI behavior only, not database security.
-    const rows = state[table as 'categories' | 'products' | 'image_cleanup' | 'catalog_section_settings'] as unknown as Record<string, unknown>[];
+    const rows = state[table as 'categories' | 'products' | 'image_cleanup' | 'catalog_section_settings' | 'catalog_banners'] as unknown as Record<string, unknown>[];
     const matches = (row: Record<string, unknown>) => [...url.searchParams.entries()].every(([key, value]) => !value.startsWith('eq.') || String(row[key]) === value.slice(3));
     if (method === 'GET') {
       const selected = rows.filter(matches);
